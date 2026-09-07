@@ -12,11 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trimStrings(except: ['new_password', 'new_password_confirmation']);
-        $middleware->alias([
-            'admin' => AdminMiddleware::class,
-        ]);
-    })
+    $middleware->trustProxies(at: '*');
+
+    $middleware->alias([
+        'admin' => AdminMiddleware::class,
+    ]);
+   })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['new_password', 'new_password_confirmation']);
     })->create();
