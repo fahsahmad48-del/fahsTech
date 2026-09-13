@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class SearchController extends Controller
 {
@@ -31,6 +32,11 @@ class SearchController extends Controller
                 'created_at',
             ])
             ->with('category:id,name');
+
+        // Keep public browsing available while the product type migration is pending.
+        if (Schema::hasColumn('products', 'product_type')) {
+            $query->addSelect('product_type');
+        }
 
         $search = trim($validated['q'] ?? '');
         if ($search !== '') {

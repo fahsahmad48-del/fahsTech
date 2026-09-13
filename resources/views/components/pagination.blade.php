@@ -1,5 +1,5 @@
 @if ($paginator->hasPages())
-    <nav class="pagination" aria-label="Product pages">
+    <nav class="pagination" aria-label="{{ $label ?? 'Product pages' }}">
         @if ($paginator->onFirstPage())
             <span class="btn btn-outline" aria-disabled="true">Previous</span>
         @else

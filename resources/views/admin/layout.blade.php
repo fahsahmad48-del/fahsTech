@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>@yield('title', 'Admin') — {{ $storeSettings->store_name ?? 'Mobile Hub' }}</title>
@@ -22,12 +23,20 @@
             </a>
 
             <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu" aria-controls="mainNav" aria-expanded="false">
-                ☰
+                <svg viewBox="0 0 24 24" fill="none">
+                <path
+                    d="M3 6h18M3 12h18M3 18h18"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+               </svg>
             </button>
 
             <nav class="main-nav" id="mainNav">
                 <a href="{{ route('home') }}">Home</a>
-                <a href="{{ route('search') }}">Browse Phones</a>
+                <a href="{{ route('search') }}">Browse Products</a>
+                <a href="{{ route('perfumes.index') }}">Perfumes</a>
                 <a href="{{ url('/admin/products') }}" class="active">Admin</a>
             </nav>
 
@@ -72,11 +81,15 @@
                 Categories
             </a>
 
+            <a href="{{ route('admin.perfumes.index') }}" class="admin-tab {{ request()->routeIs('admin.perfumes.*') ? 'active' : '' }}">
+                Perfumes
+            </a>
+
             <a
                 href="{{ url('/admin/settings') }}"
                 class="admin-tab {{ request()->is('admin/settings*') ? 'active' : '' }}"
             >
-                Store Settings
+                Store Settings 
             </a>
 
         </div>

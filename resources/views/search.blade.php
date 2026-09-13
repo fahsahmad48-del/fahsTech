@@ -1,9 +1,9 @@
 <x-layout>
-    <div class="container" style="padding-top:30px;" id="phoneSearch"
+    <div class="container" style="padding-top:30px;" id="productSearch"
         data-endpoint="{{ route('search.products') }}"
         data-product-url="{{ url('/products') }}"
         data-image-url="{{ asset('storage') }}">
-        <h1 style="margin-bottom:18px;">Browse phones</h1>
+        <h1 style="margin-bottom:18px;">Browse Products</h1>
 
         <div class="search-bar reveal reveal-left">
             <input type="text" id="searchInput" maxlength="120"
@@ -18,12 +18,12 @@
 
         <div id="searchLoading" class="search-loading" role="status" hidden>
             <span class="loading-spinner" aria-hidden="true"></span>
-            <span>Loading phones...</span>
+            <span>Loading products...</span>
         </div>
         <p class="result-count" id="resultCount" role="status" aria-live="polite"></p>
         <div class="grid" id="resultsGrid" aria-busy="true"></div>
         <nav id="searchPagination" class="pagination" aria-label="Search pages" hidden></nav>
-        <noscript><p>Please enable JavaScript to search the phone catalog.</p></noscript>
+        <noscript><p>Please enable JavaScript to search the product catalog.</p></noscript>
     </div>
     <script src="{{ asset('js/search.js') }}" defer></script>
 </x-layout>

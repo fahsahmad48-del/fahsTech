@@ -5,7 +5,7 @@
         <div class="breadcrumb">
             <a href="{{ route('home') }}">Home</a>
             /
-            <a href="{{ url('/search') }}">Phones</a>
+            <a href="{{ url('/search') }}">Products</a> 
             /
             {{ $product->brand }} {{ $product->name }}
         </div>
@@ -25,7 +25,7 @@
                 @else
 
                     <div class="product-placeholder">
-                        📱
+                        📦
                     </div>
 
                 @endif
@@ -52,12 +52,12 @@
                 </div>
 
 
-                <p class="product-desc">
-                    {{ $product->description }}
-                </p>
+                @if (filled($product->description))
+                    <p class="product-desc">{{ $product->description }}</p>
+                @endif
 
 
-                @if (!empty($product->storage))
+                @if ($product->isPhone() && !empty($product->storage))
 
                     <div class="option-row">
 
@@ -82,7 +82,7 @@
                 @endif
 
 
-                @if (!empty($product->ram))
+                @if ($product->isPhone() && !empty($product->ram))
 
                     <div class="option-row">
 
@@ -132,59 +132,24 @@
                 @endif
 
 
-                <table class="specs-table">
+                @php
+                    $specifications = $product->specs ?? [];
+                    if ($product->isPhone()) {
+                        $specifications = collect(['Screen', 'Processor', 'Battery', 'Camera'])
+                            ->mapWithKeys(fn ($name) => [$name => $specifications[$name] ?? $specifications[strtolower($name)] ?? null])
+                            ->all();
+                    }
+                    $specifications = array_filter($specifications, fn ($value) => is_scalar($value) && trim((string) $value) !== '');
+                @endphp
+                @if ($specifications)
+                    <table class="specs-table">
+                        <caption>Specifications</caption>
+                        @foreach ($specifications as $name => $value)
+                            <tr><td>{{ $name }}</td><td>{{ $value }}</td></tr>
+                        @endforeach
+                    </table>
+                @endif
 
-                    <tr>
-                        <td>Screen</td>
-
-                        <td>
-                            {{ $product->specs['Screen'] ?? $product->specs['screen'] ?? '—' }}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Processor</td>
-
-                        <td>
-                            {{ $product->specs['Processor'] ?? $product->specs['processor'] ?? '—' }}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Battery</td>
-
-                        <td>
-                            {{ $product->specs['Battery'] ?? $product->specs['battery'] ?? '—' }}
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Camera</td>
-
-                        <td>
-                            {{ $product->specs['Camera'] ?? $product->specs['camera'] ?? '—' }}
-                        </td>
-                    </tr>
-
-                </table>
-
-
-                <div class="contact-row">
-
-                    @if (!empty($settings->whatsapp))
-
-                        <a
-                            class="btn btn-whatsapp"
-                            href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $settings->whatsapp) }}"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            WhatsApp us
-                        </a>
-
-                    @endif
-
-                </div>
 
             </div>
 

@@ -3,6 +3,7 @@
 @section('title', 'Store Settings')
 
 @section('admin-content')
+    <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
 
     <h2>Store Settings</h2>
 
@@ -13,7 +14,7 @@
 
     <form
         method="POST"
-        action="{{ route('admin.settings.update') }}"
+        id="settingsForm" action="{{ route('admin.settings.update') }}"
         style="max-width: 600px;"
     >
 
@@ -51,11 +52,26 @@
                 id="tagline" maxlength="255"
                 name="tagline"
                 value="{{ old('tagline', $settings?->tagline) }}"
-                placeholder="Find your next phone"
+                placeholder="Find your next device"
             >
 
         </div>
 
+
+        <div class="field">
+            <label for="offer_text">Offer / Announcement Text</label>
+            <textarea
+                id="offer_text"
+                name="offer_text"
+                rows="3"
+                maxlength="500"
+                dir="auto"
+                aria-describedby="offer_text_help"
+            >{{ old('offer_text', $settings?->offer_text) }}</textarea>
+            <small id="offer_text_help" style="color: var(--muted);">
+                Up to 500 characters. Leave blank to hide the offer bar on the Home page.
+            </small>
+        </div>
 
         {{-- WhatsApp Number --}}
         <div class="field">
@@ -69,14 +85,14 @@
                 value="{{ old('whatsapp_number', $settings?->whatsapp_number) }}"
                 placeholder="e.g. +961 71 123 456"
                 aria-describedby="whatsapp_number_help{{ $errors->has('whatsapp_number') ? ' whatsapp_number_error' : '' }}"
-                @if ($errors->has('whatsapp_number')) aria-invalid="true" @endif
+                @if ($errors->has('whatsapp_number')) aria-invalid="true" data-error-id="whatsapp_number_error" @endif
             >
             <small id="whatsapp_number_help" style="color: var(--muted);">
                 Include the country code (7–15 digits). Spaces, +, dashes, dots and parentheses are allowed.
                 Leave blank to hide the floating WhatsApp button.
             </small>
             @error('whatsapp_number')
-                <small id="whatsapp_number_error" role="alert">{{ $message }}</small>
+                <small id="whatsapp_number_error" data-validation-error role="alert">{{ $message }}</small>
             @enderror
         </div>
 
@@ -131,7 +147,7 @@
 
     <form
         method="POST"
-        action="{{ route('admin.settings.password') }}"
+        id="passwordForm" action="{{ route('admin.settings.password') }}"
         style="max-width: 600px;"
     >
         @csrf
@@ -192,3 +208,8 @@
     </form>
 
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/admin/common.js') }}" defer></script>
+    <script src="{{ asset('js/admin/settings.js') }}" defer></script>
+@endpush

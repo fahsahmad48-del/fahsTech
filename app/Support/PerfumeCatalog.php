@@ -1,0 +1,26 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Perfume;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\Rule;
+
+class PerfumeCatalog
+{
+    public function paginate(Request $request, string $route, ?int $page = null): LengthAwarePaginator
+    {
+        $data = $request->validate([
+            'category' => ['nullable', 'string', Rule::in(array_keys(Perfume::CATEGORIES))],
+            'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        return Perfume::query()
+            ->when($data['category'] ?? null, fn ($query, $category) => $query->where('category', $category))
+            ->latest()->orderByDesc('id')
+            ->paginate(15, ['*'], 'page', $page ?? ($data['page'] ?? 1))
+            ->withPath(route($route))
+            ->appends(array_filter(['category' => $data['category'] ?? null]));
+    }
+}

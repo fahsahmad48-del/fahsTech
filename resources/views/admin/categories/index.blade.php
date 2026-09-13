@@ -3,6 +3,8 @@
 @section('title', 'Categories')
 
 @section('admin-content')
+    <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
+    <button type="button" id="retryCategories" class="btn btn-outline btn-sm" hidden>Reload category list</button>
 
     <h2>Categories</h2>
 
@@ -15,7 +17,7 @@
     <form
         method="POST"
         action="{{ route('admin.categories.store') }}"
-        class="add-inline"
+        class="add-inline" id="addCategoryForm"
     >
         @csrf
 
@@ -35,62 +37,12 @@
 
 
     {{-- Categories --}}
-    <div class="chip-manage">
+    <div class="chip-manage" id="categoryRows"
+        data-index-url="{{ route('admin.categories.index') }}"
+        data-update-url-template="{{ route('admin.categories.update', ['category' => '__CATEGORY__']) }}"
+        data-old-input="{{ json_encode(session()->getOldInput()) }}">
 
-        @forelse ($categories as $category)
-
-            <div class="chip">
-
-                <span>
-                    {{ $category->name }}
-                    ({{ $category->products_count }})
-                </span>
-
-
-                {{-- Edit --}}
-                <button
-                    type="button"
-                    class="edit-category"
-                    data-id="{{ $category->id }}"
-                    data-name="{{ $category->name }}"
-                    title="Edit"
-                >
-                    ✎
-                </button>
-
-
-                {{-- Delete --}}
-                <form
-                    method="POST"
-                    action="{{ route('admin.categories.destroy', $category) }}"
-                    @if ($category->products_count > 0)
-                        class="category-delete-blocked"
-                        data-category-name="{{ $category->name }}"
-                    @else
-                        data-confirm="Delete {{ $category->name }}? This cannot be undone."
-                    @endif
-                >
-                    @csrf
-                    @method('DELETE')
-
-                    <button
-                        type="submit"
-                        title="Delete"
-                    >
-                        ×
-                    </button>
-
-                </form>
-
-            </div>
-
-        @empty
-
-            <p style="color: var(--muted);">
-                No categories added yet.
-            </p>
-
-        @endforelse
+        @include('admin.categories.rows')
 
     </div>
 
@@ -203,78 +155,7 @@
 
 @endsection
 
-
 @push('scripts')
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-
-        const modal = document.getElementById("categoryModal");
-        const form = document.getElementById("editCategoryForm");
-        const nameInput = document.getElementById("editCategoryName");
-        const deleteWarning = document.getElementById("categoryDeleteWarning");
-        const deleteWarningName = document.getElementById("categoryDeleteWarningName");
-
-        document.querySelectorAll(".category-delete-blocked").forEach(deleteForm => {
-            deleteForm.addEventListener("submit", event => {
-                event.preventDefault();
-                deleteWarningName.textContent = deleteForm.dataset.categoryName;
-                deleteWarning.showModal();
-            });
-        });
-
-        deleteWarning.addEventListener("click", event => {
-            const bounds = deleteWarning.getBoundingClientRect();
-            if (event.target === deleteWarning && (
-                event.clientX < bounds.left || event.clientX > bounds.right ||
-                event.clientY < bounds.top || event.clientY > bounds.bottom
-            )) {
-                deleteWarning.close();
-            }
-        });
-
-        function closeModal() {
-            modal.close();
-        }
-
-        document.querySelectorAll(".edit-category").forEach(button => {
-
-            button.addEventListener("click", () => {
-
-                nameInput.value = button.dataset.name;
-                document.getElementById("categoryRecord").value = button.dataset.id;
-
-                form.action =
-                    "{{ url('/admin/categories') }}/" + button.dataset.id;
-
-                modal.showModal();
-            });
-
-        });
-
-        document
-            .getElementById("closeCategoryModal")
-            .addEventListener("click", closeModal);
-
-        document
-            .getElementById("cancelCategoryModal")
-            .addEventListener("click", closeModal);
-
-        modal.addEventListener("click", event => {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-
-
-        const previous = {{ Illuminate\Support\Js::from(session()->getOldInput()) }};
-        if (previous._form === 'category-edit' && /^\d+$/.test(previous._record ?? '')) {
-            nameInput.value = previous.name ?? '';
-            document.getElementById('categoryRecord').value = previous._record;
-            form.action = "{{ url('/admin/categories') }}/" + previous._record;
-            modal.showModal();
-        }
-    });
-</script>
-
+    <script src="{{ asset('js/admin/common.js') }}" defer></script>
+    <script src="{{ asset('js/admin/categories.js') }}" defer></script>
 @endpush

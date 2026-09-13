@@ -8,6 +8,7 @@ use App\Support\WhatsAppNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class SettingController extends Controller
 {
@@ -25,6 +26,7 @@ class SettingController extends Controller
         $validated = $request->validate([
             'store_name' => ['required', 'string', 'max:100'],
             'tagline' => ['nullable', 'string', 'max:255'],
+            'offer_text' => ['nullable', 'string', 'max:500'],
             'about_title' => ['nullable', 'string', 'max:150'],
             'about_text' => ['nullable', 'string', 'max:3000'],
             'whatsapp_number' => ['bail', 'nullable', 'string', 'max:30', function ($attribute, $value, $fail) {
@@ -35,10 +37,14 @@ class SettingController extends Controller
         ]);
 
         $settings = Setting::firstOrNew();
-        $settings->fill($validated);
+        $settings->fill($validated); 
         $settings->save();
 
         Cache::forget('home.settings');
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Settings updated successfully.']);
+        }
 
         return back()->with('success', 'Store settings updated successfully.');
     }
@@ -58,7 +64,7 @@ class SettingController extends Controller
         $admin = $request->attributes->get('admin');
 
         if (! Hash::check($validated['current_password'], $admin->password)) {
-            return back()->withErrors([
+            throw ValidationException::withMessages([
                 'current_password' => 'Current password is incorrect.',
             ]);
         }
@@ -69,6 +75,13 @@ class SettingController extends Controller
 
         $request->session()->regenerate();
         $request->session()->put('admin_fingerprint', $admin->sessionFingerprint());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Password changed successfully.',
+                'csrf_token' => $request->session()->token(),
+            ]);
+        }
 
         return back()->with('success', 'Admin password changed successfully.');
     }

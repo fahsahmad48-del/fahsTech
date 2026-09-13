@@ -64,16 +64,18 @@
                 href="{{ url('/search') }}"
                 class="{{ request()->is('search') ? 'active' : '' }}"
             >
-                Browse Phones
+                Browse Products
             </a>
 
-
-            <a
-                href="{{ url('/admin/products') }}"
-                class="nav-cta {{ request()->is('admin*') ? 'active' : '' }}"
-            >
-                Admin
+            <a href="{{ route('perfumes.index') }}" class="{{ request()->routeIs('perfumes.*') ? 'active' : '' }}">
+                Perfumes
             </a>
+
+            @if (session('admin_authenticated'))
+                <a href="{{ route('admin.products.index') }}" class="nav-cta {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                    Admin Dashboard
+                </a>
+            @endif
 
         </nav>
 

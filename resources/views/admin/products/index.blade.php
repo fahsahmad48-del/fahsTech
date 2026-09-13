@@ -3,142 +3,53 @@
 @section('title', 'Products')
 
 @section('admin-content')
-
-    {{-- Add Product --}}
-    <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
-        <button type="button" class="btn btn-primary" id="addProductBtn">
-            + Add Phone
-        </button>
+    <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
+    <div id="adminProducts"
+        data-filter-url="{{ route('admin.products.filter') }}"
+        data-index-url="{{ route('admin.products.index') }}"
+        data-phone-store-url="{{ route('admin.products.store') }}"
+        data-device-store-url="{{ route('admin.products.devices.store') }}"
+        data-page="{{ $products->currentPage() }}"
+        data-old-input="{{ json_encode(session()->getOldInput()) }}">
+        <div class="admin-products-toolbar">
+            <div class="field admin-category-filter">
+                <label for="adminCategory">Category:</label>
+                <select id="adminCategory">
+                    <option value="">All Categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" @selected((string) $selectedCategory === (string) $category->id)>{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="admin-product-buttons">
+                <button type="button" class="btn btn-primary" id="addProductBtn">+ Add Phone</button>
+                <button type="button" class="btn btn-outline" id="addDeviceBtn">+ Add Device</button>
+            </div>
+        </div>
+        <div id="adminProductsLoading" class="search-loading" role="status" hidden>
+            <span class="loading-spinner" aria-hidden="true"></span> Loading products...
+        </div>
+        <div id="adminProductsError" class="note" role="alert" hidden>
+            <span></span>
+            <button type="button" class="btn btn-outline btn-sm" id="retryProducts">Try again</button>
+        </div>
+        <p id="adminProductsCount" role="status" aria-live="polite">{{ $products->total() }} {{ $products->total() === 1 ? 'product' : 'products' }} found</p>
+        <div id="adminProductsResults" aria-busy="false">
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Product</th><th>Brand</th><th>Category</th><th>Price</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="adminProductRows">
+                        @include('admin.products.rows')
+                    </tbody>
+                </table>
+            </div>
+            <div id="adminProductsPagination">
+                {{ $products->links('components.pagination') }}
+            </div>
+        </div>
     </div>
-
-
-    {{-- Products --}}
-    <div class="table-wrap">
-
-        <table class="admin-table">
-
-            <thead>
-                <tr>
-                    <th>Phone</th>
-                    <th>Brand</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                @forelse ($products as $product)
-
-                    <tr>
-
-                        {{-- Phone --}}
-                        <td data-label="Phone">
-
-                            @if ($product->image_path)
-                                <span class="mini-thumb">
-                                    <img
-                                        src="{{ asset('storage/' . $product->image_path) }}"
-                                        alt="{{ $product->name }}"
-                                    >
-                                </span>
-                            @endif
-
-                            {{ $product->name }}
-
-                        </td>
-
-
-                        {{-- Brand --}}
-                        <td data-label="Brand">
-                            {{ $product->brand }}
-                        </td>
-
-
-                        {{-- Category --}}
-                        <td data-label="Category">
-                            {{ $product->category?->name ?? '—' }}
-                        </td>
-
-
-                        {{-- Price --}}
-                        <td data-label="Price">
-                            ${{ number_format($product->price, 2) }}
-                        </td>
-
-
-                        {{-- Actions --}}
-                        <td data-label="Actions">
-
-                            <div class="row-actions">
-
-                                <button
-                                    type="button"
-                                    class="btn btn-outline btn-sm edit-product"
-                                    data-id="{{ $product->id }}"
-                                    data-name="{{ $product->name }}"
-                                    data-brand="{{ $product->brand }}"
-                                    data-category="{{ $product->category_id }}"
-                                    data-price="{{ $product->price }}"
-                                    data-description="{{ $product->description }}"
-                                    data-ram="{{ implode(', ', $product->ram ?? []) }}"
-                                    data-storage="{{ implode(', ', $product->storage ?? []) }}"
-                                    data-colors="{{ implode(', ', $product->colors ?? []) }}"
-                                    data-screen="{{ $product->specs['Screen'] ?? $product->specs['screen'] ?? '' }}"
-                                    data-processor="{{ $product->specs['Processor'] ?? $product->specs['processor'] ?? '' }}"
-                                    data-battery="{{ $product->specs['Battery'] ?? $product->specs['battery'] ?? '' }}"
-                                    data-camera="{{ $product->specs['Camera'] ?? $product->specs['camera'] ?? '' }}"
-                                >
-                                    Edit
-                                </button>
-
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.products.destroy', $product) }}"
-                                    data-confirm="Delete {{ $product->name }}? This cannot be undone."
-                                >
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-danger btn-sm"
-                                    >
-                                        Delete
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-                        <td colspan="5" style="text-align:center; padding:30px;">
-                            No phones added yet.
-                        </td>
-                    </tr>
-
-                @endforelse
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    {{-- Pagination --}}
-    <div style="margin-top:20px;">
-        {{ $products->links('components.pagination') }}
-    </div>
-
 
     {{-- ==========================================
          Product Modal
@@ -177,6 +88,8 @@
 
                 <input type="hidden" name="_form" value="product">
                 <input type="hidden" name="_record" id="productRecord">
+                <input type="hidden" name="filter_category" value="{{ $selectedCategory }}">
+                <input type="hidden" name="filter_page" value="{{ $products->currentPage() }}">
                 <div id="methodField"></div>
                 @if ($errors->any() && old('_form') === 'product')
                     <div class="note" role="alert">
@@ -416,174 +329,10 @@
 
     </dialog>
 
+    @include('admin.products.device-modal')
 @endsection
 
-
 @push('scripts')
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-
-        const modal = document.getElementById("productModal");
-        const form = document.getElementById("productForm");
-        const methodField = document.getElementById("methodField");
-
-        const modalTitle = document.getElementById("modalTitle");
-        const submitButton = document.getElementById("submitButton");
-        const image = document.getElementById("image");
-        const imageHint = document.getElementById("imageHint");
-
-
-        function openModal() {
-            modal.showModal();
-        }
-
-
-        function closeModal() {
-            modal.close();
-        }
-
-
-        function clearForm() {
-            form.reset();
-            methodField.innerHTML = "";
-            imageHint.textContent = "JPEG, PNG or WebP, up to 8 MB and 4096 × 4096 pixels.";
-        }
-
-
-        // =========================
-        // Add Product
-        // =========================
-
-        document
-            .getElementById("addProductBtn")
-            .addEventListener("click", () => {
-
-                clearForm();
-
-                form.action = "{{ url('/admin/products') }}";
-
-                modalTitle.textContent = "Add Phone";
-                submitButton.textContent = "Add Phone";
-
-                image.required = true;
-
-                openModal();
-            });
-
-
-        // =========================
-        // Edit Product
-        // =========================
-
-        document.querySelectorAll(".edit-product")
-            .forEach(button => {
-
-                button.addEventListener("click", () => {
-
-                    clearForm();
-
-                    const id = button.dataset.id;
-                    document.getElementById("productRecord").value = id;
-
-                    form.action =
-                        "{{ url('/admin/products') }}/" + id;
-
-                    methodField.innerHTML =
-                        '<input type="hidden" name="_method" value="PUT">';
-
-
-                    document.getElementById("name").value =
-                        button.dataset.name;
-
-                    document.getElementById("brand").value =
-                        button.dataset.brand;
-
-                    document.getElementById("category_id").value =
-                        button.dataset.category;
-
-                    document.getElementById("price").value =
-                        button.dataset.price;
-
-                    document.getElementById("description").value =
-                        button.dataset.description;
-
-                    document.getElementById("ram").value =
-                        button.dataset.ram;
-
-                    document.getElementById("storage").value =
-                        button.dataset.storage;
-
-                    document.getElementById("colors").value =
-                        button.dataset.colors;
-
-                    document.getElementById("screen").value =
-                        button.dataset.screen;
-
-                    document.getElementById("processor").value =
-                        button.dataset.processor;
-
-                    document.getElementById("battery").value =
-                        button.dataset.battery;
-
-                    document.getElementById("camera").value =
-                        button.dataset.camera;
-
-
-                    modalTitle.textContent = "Edit Phone";
-                    submitButton.textContent = "Save Changes";
-
-                    image.required = false;
-
-                    imageHint.textContent =
-                        "Leave empty to keep the current image.";
-
-                    openModal();
-                });
-
-            });
-
-
-        // =========================
-        // Close Modal
-        // =========================
-
-        document
-            .getElementById("closeModal")
-            .addEventListener("click", closeModal);
-
-
-        document
-            .getElementById("cancelModal")
-            .addEventListener("click", closeModal);
-
-
-        modal.addEventListener("click", event => {
-
-            if (event.target === modal) {
-                closeModal();
-            }
-
-        });
-
-
-        const previous = {{ Illuminate\Support\Js::from(session()->getOldInput()) }};
-        if (previous._form === 'product') {
-            const editing = /^\d+$/.test(previous._record ?? '');
-            form.action = "{{ url('/admin/products') }}" + (editing ? '/' + previous._record : '');
-            methodField.innerHTML = editing ? '<input type="hidden" name="_method" value="PUT">' : '';
-            for (const key of ['name', 'brand', 'category_id', 'price', 'description', 'ram', 'storage', 'colors', 'screen', 'processor', 'battery', 'camera']) {
-                form.elements.namedItem(key).value = previous[key] ?? '';
-            }
-            document.getElementById('productRecord').value = previous._record ?? '';
-            modalTitle.textContent = editing ? 'Edit Phone' : 'Add Phone';
-            submitButton.textContent = editing ? 'Save Changes' : 'Add Phone';
-            image.required = !editing;
-            imageHint.textContent = editing ? 'Leave empty to keep the current image.' : 'JPEG, PNG or WebP, up to 8 MB and 4096 × 4096 pixels.';
-            openModal();
-        }
-
-    });
-</script>
-
+    <script src="{{ asset('js/admin/common.js') }}" defer></script>
+    <script src="{{ asset('js/admin/products.js') }}" defer></script>
 @endpush

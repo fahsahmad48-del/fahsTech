@@ -5,29 +5,64 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\CatalogImageService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Intervention\Image\Exceptions\DecoderException;
-use Intervention\Image\ImageManager;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class ProductController extends Controller
 {
     // Show products
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->orderByDesc('id')->paginate(15);
+        $products = $this->filteredProducts($request);
         if ($products->currentPage() > $products->lastPage()) {
-            return redirect()->route('admin.products.index', ['page' => $products->lastPage()]);
+            return redirect()->route('admin.products.index', array_filter([
+                'category' => $request->input('category'), 'page' => $products->lastPage(),
+            ]));
         }
         $categories = Category::orderBy('name')->get();
+        $selectedCategory = $request->input('category', '');
 
-        return view('admin.products.index', compact('products', 'categories'));
+        return view('admin.products.index', compact('products', 'categories', 'selectedCategory'));
+    }
+
+    public function filter(Request $request): JsonResponse
+    {
+        $products = $this->filteredProducts($request);
+        if ($products->currentPage() > $products->lastPage()) {
+            $products = $this->filteredProducts($request, $products->lastPage());
+        }
+        $selectedCategory = $request->input('category', '');
+
+        return response()->json([
+            'html' => view('admin.products.rows', compact('products', 'selectedCategory'))->render(),
+            'pagination' => $products->links('components.pagination')->toHtml(),
+            'count' => $products->total(),
+            'page' => $products->currentPage(),
+        ]);
+    }
+
+    private function filteredProducts(Request $request, ?int $page = null): LengthAwarePaginator
+    {
+        $validated = $request->validate([
+            'category' => ['nullable', 'integer', 'min:1'],
+            'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        return Product::with('category')
+            ->when($validated['category'] ?? null, fn ($query, $category) => $query->where('category_id', $category))
+            ->latest()->orderByDesc('id')
+            ->paginate(15, ['*'], 'page', $page ?? ($validated['page'] ?? 1))
+            ->withPath(route('admin.products.index'))
+            ->appends(array_filter(['category' => $validated['category'] ?? null]));
     }
 
     // Add product
@@ -35,7 +70,20 @@ class ProductController extends Controller
     {
         $validated = $request->validate($this->rules(true));
         $data = $this->prepareData($validated);
+        $data['product_type'] = 'phone';
 
+        return $this->createProduct($request, $data, 'Phone added successfully.');
+    }
+
+    public function storeDevice(Request $request)
+    {
+        $data = $this->prepareDeviceData($request->validate($this->deviceRules(true)));
+
+        return $this->createProduct($request, $data, 'Device added successfully.');
+    }
+
+    private function createProduct(Request $request, array $data, string $message)
+    {
         $data['image_path'] = $this->saveImage($request->file('image'));
         $data['image_status'] = 'active';
 
@@ -48,14 +96,18 @@ class ProductController extends Controller
 
         $this->clearCache();
 
-        return back()->with('success', 'Phone added successfully.');
+        return $this->returnToProducts($request, $message, 201);
     }
 
     // Edit product
     public function update(Request $request, Product $product)
     {
-        $validated = $request->validate($this->rules(false));
-        $data = $this->prepareData($validated);
+        if ($product->isPhone()) {
+            $data = $this->prepareData($request->validate($this->rules(false)));
+            $data['product_type'] = 'phone';
+        } else {
+            $data = $this->prepareDeviceData($request->validate($this->deviceRules(false)));
+        }
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $this->saveImage($request->file('image'));
@@ -81,11 +133,11 @@ class ProductController extends Controller
             Storage::disk('public')->delete($oldImage);
         }
 
-        return back()->with('success', 'Phone updated successfully.');
+        return $this->returnToProducts($request, $product->isPhone() ? 'Phone updated successfully.' : 'Device updated successfully.');
     }
 
     // Delete product
-    public function destroy(Product $product)
+    public function destroy(Request $request, Product $product)
     {
         $imagePath = DB::transaction(function () use ($product) {
             $current = Product::lockForUpdate()->findOrFail($product->id);
@@ -99,7 +151,71 @@ class ProductController extends Controller
             Storage::disk('public')->delete($imagePath);
         }
 
-        return back()->with('success', 'Phone deleted successfully.');
+        return $this->returnToProducts($request, 'Product deleted successfully.');
+    }
+
+    private function returnToProducts(Request $request, string $message, int $status = 200)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message], $status);
+        }
+
+        // Preserve the list context for normal form submissions, including delete.
+        if ($request->has('filter_page')) {
+            $category = filter_var($request->input('filter_category'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $page = filter_var($request->input('filter_page'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 100000]]);
+
+            return redirect()->route('admin.products.index', array_filter([
+                'category' => $category ?: null, 'page' => $page ?: 1,
+            ]))->with('success', $message);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    private function deviceRules(bool $imageRequired): array
+    {
+        $rules = array_diff_key($this->rules($imageRequired), array_flip([
+            'ram', 'storage', 'screen', 'processor', 'battery', 'camera',
+        ]));
+
+        return $rules + [
+            'product_type' => ['required', 'string', Rule::in(array_keys(Product::deviceTypes()))],
+            'specs' => ['nullable', 'array', 'max:30'],
+            'specs.*' => ['array:name,value'],
+            'specs.*.name' => ['nullable', 'string', 'max:60'],
+            'specs.*.value' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    private function prepareDeviceData(array $data): array
+    {
+        $specs = [];
+        $names = [];
+        foreach ($data['specs'] ?? [] as $index => $row) {
+            $name = trim($row['name'] ?? '');
+            $value = trim($row['value'] ?? '');
+            if ($name === '' && $value === '') {
+                continue;
+            }
+            if ($name === '' || $value === '') {
+                $field = $name === '' ? 'name' : 'value';
+                throw ValidationException::withMessages(["specs.$index.$field" => 'Enter both a specification name and value, or leave both empty.']);
+            }
+            $key = mb_strtolower($name);
+            if (isset($names[$key])) {
+                throw ValidationException::withMessages(["specs.$index.name" => 'Each specification name must be unique.']);
+            }
+            $names[$key] = true;
+            $specs[$name] = $value;
+        }
+
+        // Store a JSON object even when specification names happen to be numeric.
+        $data['specs'] = (object) $specs;
+        $data['colors'] = $this->toArray($data['colors'] ?? null);
+        unset($data['image']);
+
+        return $data;
     }
 
     // Validation
@@ -157,26 +273,7 @@ class ProductController extends Controller
     // Resize, compress and save image as WebP
     private function saveImage(UploadedFile $file): string
     {
-        $path = 'products/'.Str::uuid().'.webp';
-
-        try {
-            $manager = new ImageManager(config('intervention-image.driver'), decodeAnimation: false);
-            $image = $manager->decodePath($file->getRealPath());
-        } catch (DecoderException $exception) {
-            throw ValidationException::withMessages(['image' => 'This image could not be read. Please choose another image.']);
-        }
-        $image->scaleDown(width: 1200, height: 1200);
-
-        $saved = Storage::disk('public')->put(
-            $path,
-            (string) $image->encodeUsingFileExtension('webp', quality: 75, strip: true)
-        );
-
-        if (! $saved) {
-            throw ValidationException::withMessages(['image' => 'The image could not be saved. Please try again.']);
-        }
-
-        return $path;
+        return app(CatalogImageService::class)->save($file, 'products');
     }
 
     // Clear changed home data

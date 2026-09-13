@@ -8,7 +8,20 @@ use Illuminate\Support\Str;
 
 class Product extends Model
 {
+    public const TYPES = [
+        'phone' => 'Phone',
+        'laptop' => 'Laptop',
+        'earbuds' => 'Earbuds / AirPods',
+        'playstation' => 'PlayStation',
+        'tablet' => 'Tablet',
+        'smart_watch' => 'Smart Watch',
+        'other' => 'Other',
+    ];
+
+    protected $attributes = ['product_type' => 'phone'];
+
     protected $fillable = [
+        'product_type',
         'name',
         'brand',
         'slug',
@@ -42,7 +55,7 @@ class Product extends Model
 
     private static function createUniqueSlug(string $name): string
     {
-        $slug = substr(Str::slug($name), 0, 120) ?: 'phone';
+        $slug = substr(Str::slug($name), 0, 120) ?: 'product';
         $originalSlug = $slug;
         $counter = 1;
 
@@ -57,5 +70,20 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public static function deviceTypes(): array
+    {
+        return array_diff_key(self::TYPES, ['phone' => true]);
+    }
+
+    public function isPhone(): bool
+    {
+        return ($this->product_type ?? 'phone') === 'phone';
+    }
+
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->product_type ?? 'phone'] ?? 'Other';
     }
 }

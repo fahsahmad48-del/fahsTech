@@ -6,15 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 
 class CategoryController extends Controller
 {
     // Show categories
-    public function index()
+    public function index(Request $request)
     {
         $categories = Category::withCount('products')
             ->orderBy('name')
             ->get();
+
+        if ($request->expectsJson()) {
+            return response()->json(['html' => view('admin.categories.rows', compact('categories'))->render()]);
+        }
 
         return view('admin.categories.index', compact('categories'));
     }
@@ -30,7 +35,7 @@ class CategoryController extends Controller
 
         $this->clearCache();
 
-        return back()->with('success', 'Category added successfully.');
+        return $this->respond($request, 'Category added successfully.', 201);
     }
 
     // Edit category
@@ -44,14 +49,14 @@ class CategoryController extends Controller
 
         $this->clearCache();
 
-        return back()->with('success', 'Category updated successfully.');
+        return $this->respond($request, 'Category updated successfully.');
     }
 
     // Delete category
-    public function destroy(Category $category)
+    public function destroy(Request $request, Category $category)
     {
         if ($category->products()->exists()) {
-            return back()->withErrors([
+            throw ValidationException::withMessages([
                 'category' => 'This category contains products and cannot be deleted. Move or delete its products first.',
             ]);
         }
@@ -60,7 +65,16 @@ class CategoryController extends Controller
 
         $this->clearCache();
 
-        return back()->with('success', 'Category deleted successfully.');
+        return $this->respond($request, 'Category deleted successfully.');
+    }
+
+    private function respond(Request $request, string $message, int $status = 200)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message], $status);
+        }
+
+        return back()->with('success', $message);
     }
 
     private function clearCache(): void

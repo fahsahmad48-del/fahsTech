@@ -14,7 +14,7 @@ class Setting extends Model
     {
         return (object) Cache::remember('home.settings', now()->addHour(), function () {
             return static::first()?->only([
-                'store_name', 'tagline', 'about_title', 'about_text', 'phone', 'whatsapp', 'whatsapp_number', 'address',
+                'store_name', 'tagline', 'offer_text', 'about_title', 'about_text', 'phone', 'whatsapp', 'whatsapp_number', 'address',
             ]) ?? [];
         });
     }
@@ -22,6 +22,7 @@ class Setting extends Model
     protected $fillable = [
         'store_name',
         'tagline',
+        'offer_text',
         'about_title',
         'about_text',
         'phone',

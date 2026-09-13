@@ -7,7 +7,9 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{{ $storeSettings->store_name ?? 'Mobile Hub' }} — Phone Store</title>
+    <title>{{ $storeSettings->store_name ?? 'Mobile Hub' }} — Device Store</title>
+
+
 
 
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -15,12 +17,12 @@
 </head>
 
 @php
-    $whatsappNumber = request()->routeIs('home', 'search', 'products.show')
+    $whatsappNumber = request()->routeIs('home', 'search', 'products.show', 'perfumes.*')
         ? \App\Support\WhatsAppNumber::normalize($storeSettings->whatsapp_number ?? null)
         : null;
 @endphp
 
-<body @class(['has-whatsapp-contact' => $whatsappNumber !== null])>
+<body @class(['store-layout', 'has-whatsapp-contact' => $whatsappNumber !== null])>
 
     <x-navbar />
 
