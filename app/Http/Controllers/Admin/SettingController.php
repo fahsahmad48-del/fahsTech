@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Rules\BcryptPassword;
 use App\Support\WhatsAppNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -53,12 +54,8 @@ class SettingController extends Controller
     public function updatePassword(Request $request)
     {
         $validated = $request->validate([
-            'current_password' => ['required', 'string', 'max:72'],
-            'new_password' => ['bail', 'required', 'string', 'min:8', 'max:72', 'confirmed', 'different:current_password', function ($attribute, $value, $fail) {
-                if (strlen($value) > 72) {
-                    $fail('The new password must not exceed 72 bytes.');
-                }
-            }],
+            'current_password' => ['bail', 'required', 'string', 'max:72', new BcryptPassword],
+            'new_password' => ['bail', 'required', 'string', 'min:8', 'max:72', 'confirmed', 'different:current_password', new BcryptPassword],
         ]);
 
         $admin = $request->attributes->get('admin');

@@ -1,7 +1,5 @@
                 @forelse ($products as $product)
-
                     <tr>
-
                         {{-- Product --}}
                         <td data-label="Product">
 
@@ -16,7 +14,6 @@
 
                             {{ $product->name }}
                             <span class="product-type-badge">{{ $product->typeLabel() }}</span>
-
                         </td>
 
 

@@ -1,8 +1,10 @@
+Current update (2026-09-15): The perfume forms, model, validation, lists, detail view and edit script now use no brand field. Run `php artisan migrate` to apply `2026_09_15_000000_drop_brand_from_perfumes_table.php`. The original migration is preserved. Rollback restores an 80-character column with an empty-string default for existing rows; deleted values cannot be recovered. Product, Phone, Device and search brand handling are unchanged. Current verification: 18 perfume/admin JSON tests passed (362 assertions), plus 3 Product/Device/search regression tests (118 assertions). PHP style, JavaScript syntax and the changed-file whitespace checks passed. The new migration was exercised in the isolated test database; it has not been applied to the store database. The verification results at the end describe the original implementation.
+
 Perfumes are implemented independently from Products and Categories. The local migration has run successfully. Open `/admin/perfumes` for management and `/perfumes` for the public catalog.
 
 1. **Migration created:** `database/migrations/2026_09_12_000000_create_perfumes_table.php`. Applied locally in migration batch 5.
 
-2. **Database structure:** Only the `perfumes` table was added. It contains `id`, `name` (120), `brand` (80), unique `slug` (160), `category` (20), `price` (decimal 10,2), nullable JSON `specs`, nullable text `description`, required `image_path`, `image_status` (20, default `active`), and timestamps. Indexes cover `(category, created_at, id)` and `(created_at, id)`. Categories are validated in the application as `men` or `women`. There is no perfume category table or relationship to the device category table.
+2. **Database structure:** Only the `perfumes` table was added. It contains `id`, `name` (120), unique `slug` (160), `category` (20), `price` (decimal 10,2), nullable JSON `specs`, nullable text `description`, required `image_path`, `image_status` (20, default `active`), and timestamps. Indexes cover `(category, created_at, id)` and `(created_at, id)`. Categories are validated in the application as `men` or `women`. There is no perfume category table or relationship to the device category table.
 
 3. **Model created:** `app/Models/Perfume.php`, with the requested fillable fields, array specs and decimal price casts, fixed category labels, and unique name-based slugs with numeric suffixes. Editing a name preserves the existing URL. The `filter` slug is reserved for the JSON endpoint.
 
@@ -21,9 +23,9 @@ Perfumes are implemented independently from Products and Categories. The local m
    | GET | `/perfumes/filter` | `perfumes.filter` |
    | GET | `/perfumes/{perfume:slug}` | `perfumes.show` |
 
-6. **Admin Blade files:** Added `resources/views/admin/perfumes/index.blade.php`, `rows.blade.php`, and `modal.blade.php`. The page has one category selector, no search field, image/name/brand/category/price/actions, pagination, and the requested empty state. Add and edit share a native dialog using the existing device modal classes. Edit preloads the image and all editable fields. Delete uses the existing confirmation dialog.
+6. **Admin Blade files:** Added `resources/views/admin/perfumes/index.blade.php`, `rows.blade.php`, and `modal.blade.php`. The page has one category selector, no search field, image/name/category/price/actions, pagination, and the requested empty state. Add and edit share a native dialog using the existing device modal classes. Edit preloads the image and all editable fields. Delete uses the existing confirmation dialog.
 
-7. **Public Blade files:** Added `resources/views/perfumes/index.blade.php`, `cards.blade.php`, `show.blade.php`, and `feedback.blade.php`. Cards show image, brand, name, category and price. The detail page shows description and nonempty dynamic specifications. Public category and pagination links also work without JavaScript.
+7. **Public Blade files:** Added `resources/views/perfumes/index.blade.php`, `cards.blade.php`, `show.blade.php`, and `feedback.blade.php`. Cards show image, name, category and price. The detail page shows description and nonempty dynamic specifications. Public category and pagination links also work without JavaScript.
 
 8. **Admin navigation:** Connected the existing Perfumes tab in `resources/views/admin/layout.blade.php` to `admin.perfumes.index`, including its active state. Existing tab layout and mobile scrolling styles are reused.
 

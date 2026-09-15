@@ -2,8 +2,21 @@
 
 @section('title', 'Categories')
 
+@section('admin-messages')
+    @php
+        $generalError = collect($errors->getMessages())->except('name')->flatten()->first();
+        $message = $generalError ?: session('success');
+    @endphp
+    <div id="adminMessage" class="note {{ $generalError ? '' : 'note-success' }}"
+        style="{{ $generalError ? 'color:#dc2626;' : '' }}"
+        role="{{ $generalError ? 'alert' : 'status' }}" aria-live="polite" @if (! $message) hidden @endif>{{ $message }}</div>
+@endsection
+
 @section('admin-content')
-    <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
+    @php
+        $addNameError = old('_form') !== 'category-edit' ? $errors->first('name') : '';
+        $editNameError = old('_form') === 'category-edit' ? $errors->first('name') : '';
+    @endphp
     <button type="button" id="retryCategories" class="btn btn-outline btn-sm" hidden>Reload category list</button>
 
     <h2>Categories</h2>
@@ -17,18 +30,24 @@
     <form
         method="POST"
         action="{{ route('admin.categories.store') }}"
-        class="add-inline" id="addCategoryForm"
+        class="add-inline category-form-row" id="addCategoryForm"
     >
         @csrf
 
-        <input
-            type="text"
-            name="name"
-            placeholder="New category name"
-            value="{{ old('_form') === 'category-edit' ? '' : old('name') }}"
-            aria-label="New category name" maxlength="100"
-            required
-        >
+        <div class="category-field">
+            <input
+                type="text"
+                name="name"
+                placeholder="New category name"
+                value="{{ old('_form') !== 'category-edit' && is_string(old('name')) ? old('name') : '' }}"
+                aria-label="New category name" maxlength="100"
+                id="categoryName" aria-describedby="categoryNameError"
+                @class(['input-error' => $addNameError])
+                @if ($addNameError) aria-invalid="true" @endif
+                required
+            >
+            <div class="field-error" id="categoryNameError" aria-live="polite" @if (! $addNameError) hidden @endif>{{ $addNameError }}</div>
+        </div>
 
         <button type="submit" class="btn btn-primary btn-sm">
             Add
@@ -109,11 +128,8 @@
                 @method('PUT')
                 <input type="hidden" name="_form" value="category-edit">
                 <input type="hidden" name="_record" id="categoryRecord">
-                @if ($errors->any() && old('_form') === 'category-edit')
-                    <div class="note" role="alert">{{ $errors->first() }}</div>
-                @endif
 
-                <div class="field">
+                <div class="field category-field">
 
                     <label for="editCategoryName">
                         Category name
@@ -123,8 +139,12 @@
                         type="text"
                         name="name"
                         id="editCategoryName" maxlength="100"
+                        aria-describedby="editCategoryNameError"
+                        @class(['input-error' => $editNameError])
+                        @if ($editNameError) aria-invalid="true" @endif
                         required
                     >
+                    <div class="field-error" id="editCategoryNameError" aria-live="polite" @if (! $editNameError) hidden @endif>{{ $editNameError }}</div>
 
                 </div>
 

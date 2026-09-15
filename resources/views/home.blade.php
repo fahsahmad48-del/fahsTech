@@ -263,8 +263,8 @@
                     </div>
 
                     <div class="phone-care-trust">
-                        Fast <span aria-hidden="true">&bull;</span>
-                        Reliable <span aria-hidden="true">&bull;</span>
+                        Fast <span aria-hidden="true"> &bull; </span>
+                        Reliable <span aria-hidden="true"> &bull; </span>
                         Professional
                     </div>
                 </div>

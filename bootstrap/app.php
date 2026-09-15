@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
     $middleware->trustProxies(at: '*'); 
+    $middleware->trimStrings(except: ['new_password', 'new_password_confirmation']);
 
     $middleware->alias([
         'admin' => AdminMiddleware::class,

@@ -5,7 +5,7 @@
         <div class="breadcrumb">
             <a href="{{ route('home') }}">Home</a>
             /
-            <a href="{{ url('/search') }}">Products</a> 
+            <a href="{{ url('/search') }}">Products</a>
             /
             {{ $product->brand }} {{ $product->name }}
         </div>
@@ -50,7 +50,6 @@
                 <div class="product-price">
                     ${{ number_format($product->price, 2) }}
                 </div>
-
 
                 @if (filled($product->description))
                     <p class="product-desc">{{ $product->description }}</p>

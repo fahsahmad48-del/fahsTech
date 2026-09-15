@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Rules\BcryptPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -21,7 +22,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validated = $request->validate([
-            'password' => ['required', 'string', 'max:72'],
+            'password' => ['bail', 'required', 'string', 'max:72', new BcryptPassword],
         ]);
 
         $admin = Admin::first();
@@ -44,7 +45,7 @@ class AuthController extends Controller
     {
         $request->session()->forget('admin_authenticated');
         $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->session()->regenerateToken(); // means the CSRF token is regenerated, which is good for security
 
         return redirect()->route('admin.login');
     }

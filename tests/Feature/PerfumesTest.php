@@ -26,7 +26,7 @@ class PerfumesTest extends TestCase
     private function data(array $overrides = []): array
     {
         return array_replace([
-            'name' => 'Dior Sauvage', 'brand' => 'Dior', 'category' => 'men', 'price' => '120.50',
+            'name' => 'Dior Sauvage', 'category' => 'men', 'price' => '120.50',
             'description' => 'A fresh fragrance.',
             'specs' => [['name' => ' Size ', 'value' => ' 100 ml '], ['name' => '', 'value' => '']],
         ], $overrides);
@@ -43,11 +43,13 @@ class PerfumesTest extends TestCase
     {
         $this->assertSame(['men' => 'Men', 'women' => 'Women'], Perfume::CATEGORIES);
         $this->assertTrue(Schema::hasColumns('perfumes', [
-            'id', 'name', 'brand', 'slug', 'category', 'price', 'specs', 'description',
+            'id', 'name', 'slug', 'category', 'price', 'specs', 'description',
             'image_path', 'image_status', 'created_at', 'updated_at',
         ]));
         $this->assertFalse(Schema::hasTable('perfume_categories'));
         $this->assertFalse(Schema::hasColumn('perfumes', 'category_id'));
+        $this->assertFalse(Schema::hasColumn('perfumes', 'brand'));
+        $this->assertTrue(Schema::hasColumn('products', 'brand'));
         foreach (['dior-sauvage', 'dior-sauvage-1', 'dior-sauvage-2'] as $slug) {
             $perfume = $this->perfume();
             $this->assertSame($slug, $perfume->slug);
@@ -61,6 +63,52 @@ class PerfumesTest extends TestCase
         $this->get('/perfumes/'.$reserved->slug)->assertOk();
         $this->assertDatabaseCount('products', 0);
         $this->assertDatabaseCount('categories', 0);
+    }
+
+    public function test_column_removal_can_be_rolled_back_and_reapplied_with_existing_perfumes(): void
+    {
+        $perfume = $this->perfume();
+        $attributes = $perfume->fresh()->getAttributes();
+        $migration = require database_path('migrations/2026_09_15_000000_drop_brand_from_perfumes_table.php');
+
+        $migration->down();
+        try {
+            $this->assertTrue(Schema::hasColumn('perfumes', 'brand'));
+            $this->assertSame('', DB::table('perfumes')->where('id', $perfume->id)->value('brand'));
+        } finally {
+            $migration->up();
+        }
+
+        $this->assertFalse(Schema::hasColumn('perfumes', 'brand'));
+        $this->assertSame($attributes, $perfume->fresh()->getAttributes());
+        $this->assertTrue(Schema::hasColumn('products', 'brand'));
+    }
+
+    public function test_perfume_forms_lists_details_and_json_have_no_brand_field(): void
+    {
+        $perfume = $this->perfume();
+        $this->assertNotContains('brand', $perfume->getFillable());
+        $this->assertArrayNotHasKey('brand', $perfume->fresh()->toArray());
+        $this->signIn();
+
+        $this->get('/admin/perfumes')->assertOk()
+            ->assertSee('id="perfumeName"', false)->assertSee('id="perfumeCategory"', false)
+            ->assertDontSee('perfumeBrand', false)->assertDontSee('name="brand"', false)
+            ->assertDontSee('<th>Brand</th>', false)->assertDontSee('data-brand', false);
+        $this->get('/perfumes')->assertOk()->assertSee($perfume->name)
+            ->assertDontSee('card-brand', false);
+        $this->get('/perfumes/'.$perfume->slug)->assertOk()->assertSee($perfume->name)
+            ->assertSee('Men')->assertSee('120.50')->assertSee('A fresh fragrance.')
+            ->assertDontSee('brand-tag', false)->assertDontSee('<td>Brand</td>', false);
+
+        foreach (['/admin/perfumes/filter', '/perfumes/filter'] as $path) {
+            $response = $this->getJson($path)->assertOk()->assertJsonPath('count', 1);
+            $this->assertStringNotContainsString('brand', $response->getContent());
+        }
+
+        $perfume->delete();
+        $empty = $this->getJson('/admin/perfumes/filter')->assertOk()->assertJsonPath('count', 0);
+        $this->assertStringContainsString('colspan="4"', $empty->json('html'));
     }
 
     public function test_every_category_can_be_created_with_specs_and_processed_images(): void
@@ -93,7 +141,7 @@ class PerfumesTest extends TestCase
         foreach ([
             [['category' => 'kids'], 'category'], [['category' => 'other'], 'category'],
             [['category' => ['men']], 'category'], [['name' => ''], 'name'],
-            [['brand' => str_repeat('a', 81)], 'brand'], [['price' => '-1'], 'price'],
+            [['price' => '-1'], 'price'],
             [['price' => '1.001'], 'price'], [['price' => '100000000'], 'price'],
             [['description' => str_repeat('x', 5001)], 'description'],
             [['specs' => 'bad'], 'specs'], [['specs' => ['Size' => '100 ml']], 'specs.Size'],

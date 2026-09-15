@@ -107,7 +107,6 @@ class PerfumeController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'brand' => ['required', 'string', 'max:80'],
             'category' => ['required', 'string', Rule::in(array_keys(Perfume::CATEGORIES))],
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:99999999.99'],
             'description' => ['nullable', 'string', 'max:5000'],

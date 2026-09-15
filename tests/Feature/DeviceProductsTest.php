@@ -313,8 +313,15 @@ class DeviceProductsTest extends TestCase
         $this->post('/admin/products/devices')->assertRedirect('/admin/login');
         $this->signIn();
         $category = Category::create(['name' => 'Audio']);
+        // Follow the redirect before session assertions restart the JSON session
+        // without a browser cookie and consume its in-memory error bag.
         $this->from('/admin/products')->post('/admin/products/devices', $this->deviceData($category) + ['_form' => 'device'])
-            ->assertSessionHasErrors('image')->assertSessionHasInput('_form', 'device')->assertSessionHasInput('specs.0.value', 'Apple M4');
-        $this->get('/admin/products')->assertOk()->assertSee('deviceModal')->assertSee('Please select the image again');
+            ->assertRedirect('/admin/products');
+        $response = $this->get('/admin/products')->assertOk()->assertSee('deviceModal')->assertSee('Please select the image again');
+        $this->assertTrue($response->viewData('errors')->has('image'));
+        preg_match('/data-old-input="([^"]*)"/', $response->getContent(), $matches);
+        $oldInput = json_decode(html_entity_decode($matches[1], ENT_QUOTES), true);
+        $this->assertSame('device', $oldInput['_form']);
+        $this->assertSame('Apple M4', $oldInput['specs'][0]['value']);
     }
 }

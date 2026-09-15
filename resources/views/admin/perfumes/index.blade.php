@@ -21,7 +21,7 @@
         <div data-results aria-busy="false">
             <div class="table-wrap">
                 <table class="admin-table">
-                    <thead><tr><th>Perfume</th><th>Brand</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Perfume</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
                     <tbody data-items>@include('admin.perfumes.rows')</tbody>
                 </table>
             </div>

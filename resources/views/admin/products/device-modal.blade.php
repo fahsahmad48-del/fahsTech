@@ -35,7 +35,7 @@
                 </div>
                 <div class="field">
                     <label for="deviceCategory">Category *</label>
-                    <select name="category_id" id="deviceCategory" required>
+                    <select name="category_id" id="deviceCategory" data-searchable-category required>
                         <option value="">Select Category</option>
                         @foreach ($categories as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>

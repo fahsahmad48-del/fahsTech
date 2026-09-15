@@ -10,7 +10,7 @@ class Perfume extends Model
     public const CATEGORIES = ['men' => 'Men', 'women' => 'Women'];
 
     protected $fillable = [
-        'name', 'brand', 'slug', 'category', 'price', 'specs',
+        'name', 'slug', 'category', 'price', 'specs',
         'description', 'image_path', 'image_status',
     ];
 

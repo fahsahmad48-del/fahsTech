@@ -1,4 +1,187 @@
 (() => {
+    // Shared by Browse Products and admin. Keep the original select as the
+    // form value and no-JavaScript fallback; the custom UI emits its change event.
+    function initSearchableCategoryDropdown(select) {
+        if (select.closest(".searchable-select")) return;
+        const wrapper = document.createElement("div");
+        wrapper.className = "searchable-select";
+        const trigger = document.createElement("button");
+        trigger.type = "button";
+        trigger.id = `${select.id}-trigger`;
+        trigger.className = "searchable-select-trigger";
+        trigger.setAttribute("aria-haspopup", "dialog");
+        trigger.setAttribute("aria-expanded", "false");
+        const label = select.labels?.[0];
+        const name = label?.textContent.trim() || select.getAttribute("aria-label") || "Category";
+        if (label) label.htmlFor = trigger.id;
+
+        const menu = document.createElement("div");
+        menu.id = `${select.id}-menu`;
+        menu.className = "searchable-select-menu";
+        menu.hidden = true;
+        menu.setAttribute("role", "dialog");
+        menu.setAttribute("aria-label", name);
+        trigger.setAttribute("aria-controls", menu.id);
+        const search = document.createElement("input");
+        search.type = "text";
+        search.className = "searchable-select-search";
+        search.placeholder = "Search categories...";
+        search.setAttribute("aria-label", "Search categories");
+        search.setAttribute("role", "combobox");
+        search.setAttribute("aria-autocomplete", "list");
+        search.setAttribute("aria-expanded", "false");
+        search.autocomplete = "off";
+        const options = document.createElement("div");
+        options.id = `${select.id}-options`;
+        options.className = "searchable-select-options";
+        options.setAttribute("role", "listbox");
+        options.setAttribute("aria-label", name);
+        search.setAttribute("aria-controls", options.id);
+        const empty = document.createElement("p");
+        empty.className = "searchable-select-empty";
+        empty.textContent = "No categories found.";
+        empty.setAttribute("role", "status");
+        empty.hidden = true;
+        const items = Array.from(select.options, (option, index) => {
+            const item = document.createElement("div");
+            item.id = `${select.id}-option-${index}`;
+            item.className = "searchable-select-option";
+            item.setAttribute("role", "option");
+            item.textContent = option.textContent.trim();
+            item.dataset.value = option.value;
+            // Keep focus in the search box until the option's click is handled.
+            item.addEventListener("mousedown", (event) => event.preventDefault());
+            item.addEventListener("click", () => choose(item));
+            options.append(item);
+            return item;
+        });
+        menu.append(search, options, empty);
+        select.before(wrapper);
+        wrapper.append(select, trigger, menu);
+        select.hidden = true;
+        let active;
+
+        function sync() {
+            trigger.textContent = select.selectedOptions[0]?.textContent.trim() || select.options[0]?.textContent.trim() || "Select Category";
+            trigger.setAttribute("aria-label", `${name}: ${trigger.textContent}`);
+            items.forEach((item) => item.setAttribute("aria-selected", String(item.dataset.value === select.value)));
+        }
+        function activate(item) {
+            active?.classList.remove("is-active");
+            active = item;
+            if (active) {
+                active.classList.add("is-active");
+                search.setAttribute("aria-activedescendant", active.id);
+                active.scrollIntoView({ block: "nearest" });
+            } else search.removeAttribute("aria-activedescendant");
+        }
+        function filter() {
+            const query = search.value.trim().toLocaleLowerCase();
+            items.forEach((item) => {
+                item.hidden = !item.textContent.toLocaleLowerCase().includes(query);
+            });
+            const visible = items.filter((item) => !item.hidden);
+            empty.hidden = visible.length > 0;
+            activate(visible.find((item) => item.dataset.value === select.value) || visible[0]);
+        }
+        function close(restoreFocus = false) {
+            menu.hidden = true;
+            trigger.setAttribute("aria-expanded", "false");
+            search.setAttribute("aria-expanded", "false");
+            if (restoreFocus) trigger.focus();
+        }
+        function open() {
+            if (trigger.disabled) return;
+            menu.hidden = false;
+            trigger.setAttribute("aria-expanded", "true");
+            search.setAttribute("aria-expanded", "true");
+            search.value = "";
+            search.focus();
+            filter();
+        }
+        function choose(item) {
+            if (trigger.disabled) return;
+            const changed = select.value !== item.dataset.value;
+            select.value = item.dataset.value;
+            sync();
+            close(true);
+            if (changed) select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        trigger.addEventListener("click", () => menu.hidden ? open() : close());
+        trigger.addEventListener("keydown", (event) => {
+            if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+                event.preventDefault();
+                open();
+            }
+        });
+        search.addEventListener("input", filter);
+        search.addEventListener("keydown", (event) => {
+            const visible = items.filter((item) => !item.hidden);
+            if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+                event.preventDefault();
+                const index = visible.indexOf(active);
+                const next = event.key === "Home" ? 0 : event.key === "End" ? visible.length - 1
+                    : (index + (event.key === "ArrowDown" ? 1 : -1) + visible.length) % visible.length;
+                activate(visible[next]);
+            } else if (event.key === "Enter") {
+                event.preventDefault();
+                if (active) choose(active);
+            }
+        });
+        wrapper.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !menu.hidden) {
+                event.preventDefault();
+                event.stopPropagation();
+                close(true);
+            }
+        });
+        wrapper.addEventListener("focusout", (event) => {
+            if (!wrapper.contains(event.relatedTarget)) close();
+        });
+        document.addEventListener("pointerdown", (event) => {
+            if (!wrapper.contains(event.target)) close();
+        });
+        select.addEventListener("change", sync);
+        select.addEventListener("searchable:sync", sync);
+        function clearRequiredError() {
+            const errorId = `${select.id}-required-error`;
+            document.getElementById(errorId)?.remove();
+            if (trigger.dataset.errorId === errorId) {
+                trigger.removeAttribute("aria-describedby");
+                trigger.removeAttribute("aria-invalid");
+                delete trigger.dataset.errorId;
+            }
+        }
+        select.addEventListener("invalid", (event) => {
+            event.preventDefault();
+            clearRequiredError();
+            const error = document.createElement("small");
+            error.id = `${select.id}-required-error`;
+            error.dataset.validationError = "";
+            error.className = "searchable-select-error";
+            error.textContent = select.validationMessage;
+            wrapper.after(error);
+            trigger.dataset.errorId = error.id;
+            trigger.setAttribute("aria-invalid", "true");
+            trigger.setAttribute("aria-describedby", error.id);
+            trigger.focus();
+            open();
+        });
+        select.addEventListener("change", () => {
+            if (select.validity.valid) clearRequiredError();
+        });
+        select.form?.addEventListener("reset", () => {
+            close();
+            clearRequiredError();
+            trigger.removeAttribute("aria-invalid");
+            queueMicrotask(sync);
+        });
+        select.closest("dialog")?.addEventListener("close", () => close());
+        sync();
+    }
+    document.querySelectorAll("select[data-searchable-category]")
+        .forEach(initSearchableCategoryDropdown);
+
     const root = document.getElementById("adminProducts");
     if (!root) return;
     const admin = window.MiniStoreAdmin;
@@ -64,6 +247,7 @@
             page = data.page;
             appliedCategory = selectedCategory;
             category.value = selectedCategory;
+            category.dispatchEvent(new Event("searchable:sync"));
             count.textContent = `${data.count} product${data.count === 1 ? "" : "s"} found`;
             syncContext();
             const url = new URL(root.dataset.indexUrl);
@@ -75,6 +259,7 @@
         } catch (error) {
             if (requestVersion !== version) return;
             category.value = appliedCategory;
+            category.dispatchEvent(new Event("searchable:sync"));
             errorBox.querySelector("span").textContent =
                 error.name === "AbortError"
                     ? "Loading took too long. Please try again."
@@ -114,6 +299,7 @@
         const params = new URLSearchParams(location.search);
         const selected = params.get("category") ?? "";
         category.value = selected;
+        category.dispatchEvent(new Event("searchable:sync"));
         loadProducts(selected, Number(params.get("page")) || 1, false);
     });
 
@@ -226,6 +412,7 @@
         }
         for (const field of config.fields)
             form.elements.namedItem(field).value = data[field] ?? "";
+        form.elements.category_id.dispatchEvent(new Event("searchable:sync"));
         document.getElementById(config.title).textContent =
             `${updateUrl ? "Edit" : "Add"} ${config.label}`;
         document.getElementById(config.submit).textContent = updateUrl

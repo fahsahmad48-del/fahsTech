@@ -3,6 +3,13 @@
 @section('title', 'Store Settings')
 
 @section('admin-content')
+    @php
+        // Invalid array input must not be passed to Blade's text escaping.
+        $oldText = function ($field) use ($settings) {
+            $value = old($field, $settings?->{$field});
+            return is_scalar($value) ? (string) $value : '';
+        };
+    @endphp
     <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
 
     <h2>Store Settings</h2>
@@ -33,7 +40,7 @@
                 type="text"
                 id="store_name" maxlength="100"
                 name="store_name"
-                value="{{ old('store_name', $settings?->store_name) }}"
+                value="{{ $oldText('store_name') }}"
                 required
             >
 
@@ -51,7 +58,7 @@
                 type="text"
                 id="tagline" maxlength="255"
                 name="tagline"
-                value="{{ old('tagline', $settings?->tagline) }}"
+                value="{{ $oldText('tagline') }}"
                 placeholder="Find your next device"
             >
 
@@ -67,7 +74,7 @@
                 maxlength="500"
                 dir="auto"
                 aria-describedby="offer_text_help"
-            >{{ old('offer_text', $settings?->offer_text) }}</textarea>
+            >{{ $oldText('offer_text') }}</textarea>
             <small id="offer_text_help" style="color: var(--muted);">
                 Up to 500 characters. Leave blank to hide the offer bar on the Home page.
             </small>
@@ -82,7 +89,7 @@
                 name="whatsapp_number"
                 maxlength="30"
                 autocomplete="tel"
-                value="{{ old('whatsapp_number', $settings?->whatsapp_number) }}"
+                value="{{ $oldText('whatsapp_number') }}"
                 placeholder="e.g. +961 71 123 456"
                 aria-describedby="whatsapp_number_help{{ $errors->has('whatsapp_number') ? ' whatsapp_number_error' : '' }}"
                 @if ($errors->has('whatsapp_number')) aria-invalid="true" data-error-id="whatsapp_number_error" @endif
@@ -108,7 +115,7 @@
                 type="text"
                 id="about_title" maxlength="150"
                 name="about_title"
-                value="{{ old('about_title', $settings?->about_title) }}"
+                value="{{ $oldText('about_title') }}"
                 placeholder="About Mobile Hub"
             >
 
@@ -126,7 +133,7 @@
                 id="about_text" maxlength="3000"
                 name="about_text"
                 rows="6"
-            >{{ old('about_text', $settings?->about_text) }}</textarea>
+            >{{ $oldText('about_text') }}</textarea>
 
         </div>
 

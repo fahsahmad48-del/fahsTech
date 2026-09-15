@@ -5,6 +5,31 @@
     if (!admin) return;
     const { showMessage, clearErrors, interceptForms } = admin;
 
+    function clearCategoryError(form) {
+        const error = form.querySelector(".field-error");
+        if (!error) return;
+        error.textContent = "";
+        error.hidden = true;
+        const input = form.elements.namedItem("name");
+        input.classList.remove("input-error");
+        input.removeAttribute("aria-invalid");
+    }
+
+    function showCategoryError(form, errors, message, status) {
+        const error = form.querySelector(".field-error");
+        const nameError = errors?.name?.[0];
+        if (status === 422 && error && nameError) {
+            error.textContent = nameError;
+            error.hidden = false;
+            const input = form.elements.namedItem("name");
+            input.classList.add("input-error");
+            input.setAttribute("aria-invalid", "true");
+            input.focus();
+            return;
+        }
+        showMessage(message, "error");
+    }
+
     async function loadCategories() {
         try {
             const response = await fetch(root.dataset.indexUrl, {
@@ -27,7 +52,11 @@
         .addEventListener("click", loadCategories);
     interceptForms(
         "#addCategoryForm, #editCategoryForm, #categoryRows form",
-        loadCategories,
+        async (form) => {
+            if (form.id === "addCategoryForm") form.elements.name.value = "";
+            await loadCategories();
+        },
+        { beforeSubmit: clearCategoryError, onError: showCategoryError },
     );
 
     const modal = document.getElementById("categoryModal");
@@ -58,6 +87,7 @@
             const button = event.target.closest(".edit-category");
             if (!button || admin.actionPending) return;
             clearErrors(form);
+            clearCategoryError(form);
             nameInput.value = button.dataset.name;
             document.getElementById("categoryRecord").value = button.dataset.id;
             form.action = root.dataset.updateUrlTemplate.replace(

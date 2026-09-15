@@ -9,7 +9,7 @@
                 <img src="{{ asset('storage/'.$perfume->image_path) }}" alt="{{ $perfume->name }}">
             </div>
             <div class="product-info reveal reveal-right">
-                <div class="brand-tag">{{ $perfume->brand }} &middot; {{ $perfume->categoryLabel() }}</div>
+                <div class="perfume-category">{{ $perfume->categoryLabel() }}</div>
                 <h1>{{ $perfume->name }}</h1>
                 <div class="product-price">${{ number_format($perfume->price, 2) }}</div>
                 @if (filled($perfume->description))

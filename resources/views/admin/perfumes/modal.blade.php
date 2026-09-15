@@ -22,19 +22,13 @@
                 <label for="perfumeName">Name *</label>
                 <input type="text" name="name" id="perfumeName" maxlength="120" required>
             </div>
-            <div class="two-col">
-                <div class="field">
-                    <label for="perfumeBrand">Brand *</label>
-                    <input type="text" name="brand" id="perfumeBrand" maxlength="80" required>
-                </div>
-                <div class="field">
-                    <label for="perfumeCategory">Category *</label>
-                    <select name="category" id="perfumeCategory" required>
-                        @foreach (\App\Models\Perfume::CATEGORIES as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            <div class="field">
+                <label for="perfumeCategory">Category *</label>
+                <select name="category" id="perfumeCategory" required>
+                    @foreach (\App\Models\Perfume::CATEGORIES as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="two-col">
                 <div class="field">

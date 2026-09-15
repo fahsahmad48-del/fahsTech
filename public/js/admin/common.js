@@ -38,7 +38,9 @@
             const parts = key.split(".");
             const name =
                 parts.shift() + parts.map((part) => `[${part}]`).join("");
-            const field = form.elements.namedItem(name);
+            const control = form.elements.namedItem(name);
+            const field = control?.closest?.(".searchable-select")
+                ?.querySelector(".searchable-select-trigger") || control;
             const error = document.createElement("small");
             error.dataset.validationError = "";
             error.style.cssText = "display:block;color:#dc2626";
@@ -81,7 +83,15 @@
             dialog.showModal();
         });
     }
-    function interceptForms(selector, afterSuccess) {
+    function interceptForms(selector, afterSuccess, options = {}) {
+        function reportError(form, errors, message, status) {
+            if (options.onError) {
+                options.onError(form, errors, message, status);
+                return;
+            }
+            showErrors(form, errors, message);
+            showMessage(message, "error");
+        }
         document
             .querySelector("main")
             ?.addEventListener("submit", async (event) => {
@@ -98,6 +108,7 @@
                     )
                         return;
                     clearErrors(form);
+                    options.beforeSubmit?.(form);
                     const messageBox = document.getElementById("adminMessage");
                     if (messageBox) messageBox.hidden = true;
                     const data = new FormData(form);
@@ -151,8 +162,7 @@
                                       ? "The server could not complete the request. Please try again."
                                       : payload.message ||
                                         "Unable to complete the request. Please try again.";
-                        showErrors(form, payload.errors, message);
-                        showMessage(message, "error");
+                        reportError(form, payload.errors, message, response.status);
                         return;
                     }
                     if (payload.csrf_token) {
@@ -175,8 +185,7 @@
                 } catch (error) {
                     const message =
                         "The request could not be completed. Check your connection and try again.";
-                    showErrors(form, {}, message);
-                    showMessage(message, "error");
+                    reportError(form, {}, message);
                 } finally {
                     buttons.forEach(([button, disabled, text]) => {
                         button.disabled = disabled;

@@ -89,13 +89,14 @@
                 href="{{ url('/admin/settings') }}"
                 class="admin-tab {{ request()->is('admin/settings*') ? 'active' : '' }}"
             >
-                Store Settings 
+                Store Settings
             </a>
 
         </div>
 
 
         {{-- Success message --}}
+        @section('admin-messages')
         @if (session('success'))
             <div class="note note-success" role="status">
                 {{ session('success') }}
@@ -116,13 +117,12 @@
         @endif
 
 
+        @show
+
         {{-- Page content --}}
         @yield('admin-content')
 
     </main>
-
-
-
 
     @stack('scripts')
 

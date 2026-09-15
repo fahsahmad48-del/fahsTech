@@ -64,7 +64,7 @@ class SearchController extends Controller
 
         return response()->json([
             'products' => $products,
-            'categories' => $this->categories(),
+            'categories' => $this->categories(), 
         ]);
     }
 

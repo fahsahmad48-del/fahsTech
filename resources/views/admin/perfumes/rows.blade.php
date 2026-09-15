@@ -4,14 +4,13 @@
             <span class="mini-thumb"><img src="{{ asset('storage/'.$perfume->image_path) }}" alt="{{ $perfume->name }}" loading="lazy"></span>
             {{ $perfume->name }}
         </td>
-        <td data-label="Brand">{{ $perfume->brand }}</td>
         <td data-label="Category">{{ $perfume->categoryLabel() }}</td>
         <td data-label="Price">${{ number_format($perfume->price, 2) }}</td>
         <td data-label="Actions">
             <div class="row-actions">
                 <button type="button" class="btn btn-outline btn-sm edit-perfume"
                     data-record="{{ $perfume->id }}" data-update-url="{{ route('admin.perfumes.update', $perfume) }}"
-                    data-name="{{ $perfume->name }}" data-brand="{{ $perfume->brand }}"
+                    data-name="{{ $perfume->name }}"
                     data-category="{{ $perfume->category }}" data-price="{{ $perfume->price }}"
                     data-description="{{ $perfume->description }}" data-specs="{{ json_encode($perfume->specs ?? (object) []) }}"
                     data-image="{{ asset('storage/'.$perfume->image_path) }}">Edit</button>
@@ -27,5 +26,5 @@
         </td>
     </tr>
 @empty
-    <tr><td colspan="5" class="admin-products-empty">No perfumes found in this category.</td></tr>
+    <tr><td colspan="4" class="admin-products-empty">No perfumes found in this category.</td></tr>
 @endforelse

@@ -55,7 +55,7 @@ class AdminJsonActionsTest extends TestCase
     {
         Storage::fake('public');
         $this->signIn();
-        $data = ['name' => 'New perfume', 'brand' => 'Brand', 'category' => 'men', 'price' => '40.00'];
+        $data = ['name' => 'New perfume', 'category' => 'men', 'price' => '40.00'];
         $this->withHeader('Accept', 'application/json')->post('/admin/perfumes', $data + [
             'image' => UploadedFile::fake()->image('scent.png'),
         ])->assertCreated()->assertJsonPath('message', 'Perfume added successfully.')->assertHeaderMissing('Location');
@@ -89,14 +89,41 @@ class AdminJsonActionsTest extends TestCase
         $this->assertStringContainsString('No categories added yet.', $this->getJson('/admin/categories')->json('html'));
     }
 
+    public function test_category_redirect_validation_renders_once_under_the_correct_input(): void
+    {
+        $this->signIn();
+        Category::create(['name' => 'Samsung']);
+        $category = Category::create(['name' => 'Phones']);
+        $message = 'A category with this name already exists.';
+
+        foreach ([
+            ['POST', '/admin/categories', [], 'categoryNameError'],
+            ['PUT', '/admin/categories/'.$category->id, ['_form' => 'category-edit', '_record' => $category->id], 'editCategoryNameError'],
+        ] as [$method, $url, $context, $errorId]) {
+            $this->from('/admin/categories')->call($method, $url, ['name' => 'Samsung'] + $context)
+                ->assertRedirect('/admin/categories');
+            $html = $this->get('/admin/categories')->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, $message));
+            $this->assertSame(1, substr_count($html, 'id="adminMessage"'));
+            preg_match('/id="'.$errorId.'"([^>]*)>(.*?)<\/div>/s', $html, $error);
+            $this->assertStringNotContainsString('hidden', $error[1]);
+            $this->assertSame($message, $error[2]);
+        }
+
+        $this->from('/admin/categories')->post('/admin/categories', ['name' => 'Laptops'])->assertRedirect();
+        $html = $this->get('/admin/categories')->assertOk()->getContent();
+        $this->assertSame(1, substr_count($html, 'Category added successfully.'));
+        $this->assertStringNotContainsString($message, $html);
+    }
+
     public function test_json_validation_includes_nested_specification_fields(): void
     {
         $this->signIn();
         $this->postJson('/admin/products', [])->assertUnprocessable()->assertJsonValidationErrors(['name', 'image']);
         $this->postJson('/admin/products/devices', [])->assertUnprocessable()->assertJsonValidationErrors(['product_type', 'image']);
-        $perfume = Perfume::create(['name' => 'Scent', 'brand' => 'Brand', 'category' => 'women', 'price' => 1, 'image_path' => 'perfumes/test.webp']);
+        $perfume = Perfume::create(['name' => 'Scent', 'category' => 'women', 'price' => 1, 'image_path' => 'perfumes/test.webp']);
         $this->putJson('/admin/perfumes/'.$perfume->id, [
-            'name' => 'Scent', 'brand' => 'Brand', 'category' => 'women', 'price' => 1,
+            'name' => 'Scent', 'category' => 'women', 'price' => 1,
             'specs' => [['name' => 'Size', 'value' => '']],
         ])->assertUnprocessable()->assertJsonValidationErrors('specs.0.value');
         $this->putJson('/admin/settings', ['store_name' => ''])->assertUnprocessable()->assertJsonValidationErrors('store_name');

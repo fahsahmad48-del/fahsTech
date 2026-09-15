@@ -14,7 +14,7 @@
         <div class="admin-products-toolbar">
             <div class="field admin-category-filter">
                 <label for="adminCategory">Category:</label>
-                <select id="adminCategory">
+                <select id="adminCategory" data-searchable-category>
                     <option value="">All Categories</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category->id }}" @selected((string) $selectedCategory === (string) $category->id)>{{ $category->name }}</option>
@@ -93,7 +93,7 @@
                 <div id="methodField"></div>
                 @if ($errors->any() && old('_form') === 'product')
                     <div class="note" role="alert">
-                        @foreach ($errors->all() as $error)<div>{{ $error }}</div>@endforeach
+                        @foreach ($errors->all() as $error)<div>{{ $error }}</div> @endforeach
                         <div>Please select the image again if you were uploading one.</div>
                     </div>
                 @endif
@@ -133,6 +133,7 @@
                         <select
                             name="category_id"
                             id="category_id"
+                            data-searchable-category
                             required
                         >
 

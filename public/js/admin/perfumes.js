@@ -200,7 +200,6 @@
         }
         for (const field of [
             "name",
-            "brand",
             "category",
             "price",
             "description",

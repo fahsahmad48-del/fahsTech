@@ -1,3 +1,5 @@
+
+/* reveal */
 (() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const observer =
@@ -108,6 +110,8 @@
             button.textContent = "Please wait…";
         });
     });
+
+    /* Reset form state on page show */
     window.addEventListener("pageshow", () => {
         document.querySelectorAll("form[data-submitting]").forEach((form) => {
             delete form.dataset.submitting;

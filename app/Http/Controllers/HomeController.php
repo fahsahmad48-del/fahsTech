@@ -18,8 +18,10 @@ class HomeController extends Controller
             'home.categories',
             now()->addHour(),
             function () {
-                return Category::withCount('products')
-                    ->orderBy('name')
+                return Category::withCount('products') 
+                    ->has('products')
+                    ->inRandomOrder()
+                    ->take(6)
                     ->get()
                     ->toArray();
             }
