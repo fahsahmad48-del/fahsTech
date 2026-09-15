@@ -47,6 +47,9 @@ if (PHP_SAPI === 'cli' && ($argv[1] ?? '') === '--seed') {
     for ($i = 1; $i <= 17; $i++) {
         App\Models\Perfume::create(['name' => 'Review perfume '.$i, 'category' => $i % 2 ? 'men' : 'women', 'price' => 20, 'image_path' => '']);
     }
+    if (getenv('MINISTORE_CARD_REVIEW') === '1') {
+        require __DIR__.'/card-fixtures.php';
+    }
     echo "Isolated SQLite database seeded.\n";
     exit;
 }

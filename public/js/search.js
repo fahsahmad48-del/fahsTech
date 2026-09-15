@@ -155,7 +155,6 @@
         input.value = (params.get("q") ?? "").slice(0, 120);
         category.value = params.get("category") ?? "";
         if (category.selectedIndex < 0) category.value = "";
-        category.dispatchEvent(new Event("searchable:sync"));
         const requestedPage = Number(params.get("page"));
         page =
             Number.isInteger(requestedPage) &&

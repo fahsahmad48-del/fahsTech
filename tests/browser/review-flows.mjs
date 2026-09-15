@@ -16,7 +16,8 @@ await new Promise(resolve => reserve.listen(0, '127.0.0.1', resolve));
 const port = reserve.address().port;
 await new Promise(resolve => reserve.close(resolve));
 const origin = `http://127.0.0.1:${port}`;
-const env = { ...process.env, MINISTORE_REVIEW_DIR: directory, MINISTORE_REVIEW_PORT: String(port) };
+const cardsOnly = process.argv.includes('--cards');
+const env = { ...process.env, MINISTORE_REVIEW_DIR: directory, MINISTORE_REVIEW_PORT: String(port), MINISTORE_CARD_REVIEW: cardsOnly ? '1' : '' };
 const fixture = join(root, 'tests/browser/review-fixture.php');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 // Consume HTTP responses fully; PHP's development server closes each connection.
@@ -125,6 +126,10 @@ try {
         }
     };
     await send('Runtime.enable'); await send('Page.enable');
+    if (cardsOnly) {
+        const { verifyCards } = await import('./card-layout.mjs');
+        await verifyCards({ send, evaluate, until, navigate, root });
+    } else {
     await navigate('/'); await layout('Home');
     await navigate('/search');
     await until("document.getElementById('resultCount').textContent === '17 products found'");
@@ -244,6 +249,7 @@ try {
     await fill('#password', '  changed password  '); await submit('.admin-login form');
     await until("location.pathname === '/admin/products' && document.readyState === 'complete'");
     console.log('Passed: settings cache invalidation, password whitespace, CSRF rotation, subsequent save, logout and login');
+    }
     assert.deepEqual(errors, [], 'Uncaught browser JavaScript errors');
     console.log('Passed: no uncaught browser JavaScript errors');
 } finally {

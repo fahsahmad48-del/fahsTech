@@ -8,7 +8,7 @@
         <div class="search-bar reveal reveal-left">
             <input type="text" id="searchInput" maxlength="120"
                 aria-label="Search by name or brand" placeholder="Search by name or brand...">
-            <select id="categorySelect" data-searchable-category aria-label="Filter by category">
+            <select id="categorySelect" aria-label="Filter by category">
                 <option value="">All Categories</option>
                 @foreach ($categories as $category)
                     <option value="{{ $category['id'] }}">{{ $category['name'] }}</option>
@@ -25,6 +25,5 @@
         <nav id="searchPagination" class="pagination" aria-label="Search pages" hidden></nav>
         <noscript><p>Please enable JavaScript to search the product catalog.</p></noscript>
     </div>
-    <script src="{{ asset('js/admin/products.js') }}" defer></script>
     <script src="{{ asset('js/search.js') }}" defer></script>
 </x-layout>

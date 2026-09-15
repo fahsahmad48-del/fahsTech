@@ -1283,7 +1283,7 @@ h3 {
 .grid {
     display: grid;
 
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 
     gap: 18px;
 }
@@ -1340,7 +1340,10 @@ h3 {
     align-items: center;
     justify-content: center;
 
-    padding: 26px;
+    position: relative;
+    width: 100%;
+    flex: 0 0 auto;
+    padding: 12px;
 }
 
 .card-image svg {
@@ -1349,22 +1352,26 @@ h3 {
 }
 
 .card-image img {
+    /* Intrinsic image dimensions must not expand the square flex item. */
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
 
-    object-fit: cover;
+    padding: inherit;
+    object-fit: contain;
 }
 
 /* Card body */
 
 .card-body {
-    padding: 14px 16px 16px;
+    padding: 10px 14px 14px;
 
     display: flex;
 
     flex-direction: column;
 
-    gap: 3px;
+    gap: 4px;
 
     flex: 1;
 }
@@ -1379,18 +1386,29 @@ h3 {
     color: var(--muted);
 
     font-weight: 600;
+    line-height: 1.4;
+    min-height: 1.4em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-name {
     font-weight: 700;
 
     font-size: 1rem;
+    line-height: 1.4;
+    min-height: 2.8em;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
 }
 
 .card-price {
     margin-top: auto;
 
-    padding-top: 10px;
+    padding-top: 6px;
 
     color: var(--primary);
 
@@ -1419,33 +1437,31 @@ h3 {
 
 @media (max-width: 600px) {
     .grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
 
-        gap: 10px;
+        gap: 12px;
     }
 
     .card-image {
-        aspect-ratio: 4 / 3;
-
-        padding: 12px;
+        padding: 10px;
     }
 
     .card-body {
-        padding: 9px 10px 11px;
+        padding: 8px 10px 12px;
 
-        gap: 2px;
+        gap: 4px;
     }
 
     .card-brand {
-        font-size: 0.64rem;
+        font-size: 0.6875rem;
     }
 
     .card-name {
-        font-size: 0.82rem;
+        font-size: 0.875rem;
     }
 
     .card-price {
-        font-size: 0.92rem;
+        font-size: 1rem;
 
         padding-top: 6px;
     }
@@ -1462,45 +1478,39 @@ h3 {
 
     border-radius: var(--radius);
 
-    padding: 16px;
+    padding: 12px;
 
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 
     gap: 12px;
 
-    flex-wrap: wrap;
-
-    margin-bottom: 26px;
+    margin-bottom: 20px;
 }
 
-.search-bar input[type="text"] {
-    flex: 2;
-
-    min-width: 200px;
-
-    padding: 11px 14px;
-
+.search-bar input[type="text"],
+.search-bar select {
+    width: 100%;
+    min-width: 0;
+    height: 46px;
+    padding: 10px 12px;
     border: 1px solid var(--border);
-
     border-radius: var(--radius-sm);
-
-    font-size: 0.95rem;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--text);
+    background-color: var(--surface);
 }
 
 .search-bar select {
-    flex: 1;
+    cursor: pointer;
+}
 
-    min-width: 160px;
-
-    padding: 11px 14px;
-
-    border: 1px solid var(--border);
-
-    border-radius: var(--radius-sm);
-
-    font-size: 0.95rem;
-
-    background: #ffffff;
+@media (max-width: 600px) {
+    .search-bar {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
 }
 
 .result-count {
@@ -1782,13 +1792,6 @@ h3 {
     width: 100%;
     min-width: 0;
 }
-.search-bar > .searchable-select {
-    flex: 0 1 240px;
-}
-.search-bar:has(.searchable-select) {
-    position: relative;
-    z-index: 2;
-}
 .searchable-select-trigger {
     position: relative;
     width: 100%;
@@ -1879,9 +1882,6 @@ h3 {
     color: #dc2626;
 }
 @media (max-width: 600px) {
-    .search-bar > .searchable-select {
-        flex-basis: 100%;
-    }
     .searchable-select-trigger {
         font-size: 1rem;
     }
@@ -2724,7 +2724,6 @@ h3 {
 .main-nav {
     flex-shrink: 0;
 }
-.card-image img,
 .product-image img,
 .mini-thumb img {
     object-fit: contain;
@@ -2762,13 +2761,6 @@ h3 {
 .search-bar input[type="text"],
 .search-bar select {
     min-width: 0;
-}
-.search-bar input[type="text"] {
-    flex-basis: 240px;
-}
-.search-bar select {
-    flex-basis: 180px;
-    max-width: 100%;
 }
 .row-actions {
     flex-wrap: wrap;
