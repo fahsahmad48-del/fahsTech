@@ -1,58 +1,117 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+miniStore
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+miniStore is a responsive product catalog built with Laravel, MySQL, and JavaScript. Visitors can browse products, search by name or brand, filter by category, and contact the store for more information. A dedicated admin dashboard lets the store owner manage products, categories, and website settings.
 
-## About Laravel
+Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Storefront
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Home page with featured sections, product categories, and the latest products.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Product search with category filters and pagination.
 
-## Learning Laravel
+Dynamic search results using JavaScript Fetch and JSON responses.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Loading indicators while search results are being fetched.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Individual product pages with images, prices, descriptions, and specifications.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Phone and WhatsApp contact links.
 
-## Agentic Development
+Responsive layouts for desktop, tablet, and mobile screens.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Scroll reveal animations.
 
-```bash
-composer require laravel/boost --dev
+Admin dashboard
 
-php artisan boost:install
-```
+Admin login and logout.
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Add, edit, and delete products.
 
-## Contributing
+Manage product images, prices, categories, and specifications.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Create and manage categories with product counts.
 
-## Code of Conduct
+Prevent deletion of categories that still contain products.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Update store information and website content.
 
-## Security Vulnerabilities
+Form validation and feedback for administrative actions.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Technology Stack
 
-## License
+Area
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Technology
+
+Backend
+
+PHP and Laravel
+
+Database
+
+MySQL / MariaDB
+
+Templates
+
+Laravel Blade and reusable components
+
+Frontend
+
+HTML, CSS, and JavaScript
+
+Dynamic requests
+
+Fetch API and JSON responses
+
+Data access
+
+Eloquent ORM
+
+Caching
+
+Laravel Cache
+
+Dependency management
+
+Composer
+
+How It Works
+
+Laravel handles routing, validation, database queries, and admin operations. Blade templates render the pages, while JavaScript updates search results without reloading the whole page.
+
+Products belong to categories and use readable slugs for their detail-page URLs. Store settings, categories, and latest-product data are cached to reduce repeated database queries. Search results are filtered and paginated on the server.
+
+Project Organization
+
+app/Models/ — Product, category, and setting models.
+
+app/Http/Controllers/ — Storefront, search, and admin logic.
+
+resources/views/ — Storefront pages and admin views.
+
+resources/views/components/ — Shared layout, navbar, and footer components.
+
+public/css/style.css — Website styling.
+
+routes/web.php — Web routes and JSON endpoints.
+
+database/migrations/ — Database schema definitions.
+
+Page-specific JavaScript is included in the relevant Blade views.
+
+Running Locally
+
+The project requires PHP, Composer, and MySQL or MariaDB. Check composer.json for the exact PHP and extension requirements.
+
+The local setup includes installing Composer dependencies, creating an .env file from .env.example, configuring the database, generating an application key, and running the database migrations. Publicly stored product images also require Laravel's storage link.
+
+Use the repository's actual seeders or account-creation process to provision an admin account. If the checked-out version uses queued jobs or a frontend build, start its queue worker or build its assets as required by that version.
+
+Author
+
+Ahmad Fahs
+
+GitHub
+
+LinkedInder the [MIT license](https://opensource.org/licenses/MIT).
