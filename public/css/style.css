@@ -1472,6 +1472,9 @@ h3 {
    ========================================================= */
 
 .search-bar {
+    position: relative;
+    z-index: 2;
+
     background: var(--surface);
 
     border: 1px solid var(--border);

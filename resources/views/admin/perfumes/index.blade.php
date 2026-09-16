@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', 'Perfumes')
+@section('title', 'Perfumes') 
 @section('admin-content')
     <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
     <div id="perfumeCatalog" data-filter-url="{{ route('admin.perfumes.filter') }}"
