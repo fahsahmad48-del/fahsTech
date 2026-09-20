@@ -17,7 +17,7 @@ class Setting extends Model
                 'store_name', 'tagline', 'offer_text', 'about_title', 'about_text', 'phone', 'whatsapp', 'whatsapp_number', 'address',
             ]) ?? [];
         });
-    }
+    }  // we write it in model because we want to use it in the view, not the controller. The controller is for handling requests and responses, while the model is for data and business logic.
 
     protected $fillable = [
         'store_name',

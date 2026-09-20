@@ -21,6 +21,6 @@ class Admin extends Model
 
     public function sessionFingerprint(): string
     {
-        return hash_hmac('sha256', $this->password, config('app.key'));
+        return hash_hmac('sha256', $this->password, config('app.key')); 
     }
 }
