@@ -39,7 +39,6 @@ const fields = [
     "processor",
     "battery",
     "camera",
-    "product_type",
 ];
 const form = (kind) => {
     const phone = kind === "product";
@@ -194,6 +193,9 @@ try {
             search(id).dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true, cancelable:true}));
         };
         assert(document.querySelectorAll('.searchable-select').length === 3, 'three independent instances');
+        for (const id of ['productForm', 'deviceForm']) {
+            assert(!new FormData(select(id)).has('product_type'), id + ' does not submit product_type');
+        }
         assert(!select('perfumeCategory').hidden, 'perfumes retain native select');
         choose('adminCategory', 'LaP'); await tick();
         assert(requests.at(-1).url.includes('category=4'), 'existing AJAX category parameter');
@@ -229,6 +231,11 @@ try {
         assert(menu('category_id').hidden, 'outside pointer closes dropdown');
         select('cancelModal').click(); document.querySelector('[data-type="laptop"]').click(); await tick();
         assert(trigger('deviceCategory').textContent === 'Samsung', 'device edit prefills category');
+        assert(select('deviceModal').open && new FormData(select('deviceForm')).get('_method') === 'PUT', 'legacy device opens edit modal');
+        select('cancelDeviceModal').click();
+        const deviceButton = document.querySelector('[data-type="laptop"]');
+        deviceButton.dataset.type = 'device'; deviceButton.click(); await tick();
+        assert(select('deviceModal').open && !new FormData(select('deviceForm')).has('product_type'), 'device edit opens without submitting type');
         choose('deviceCategory', 'lap');
         assert(new FormData(select('deviceForm')).get('category_id') === '4', 'device FormData category');
         trigger('deviceCategory').click();

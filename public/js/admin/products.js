@@ -318,7 +318,6 @@
         "camera",
     ];
     const deviceFields = [
-        "product_type",
         "name",
         "brand",
         "category_id",

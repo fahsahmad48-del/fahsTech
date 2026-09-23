@@ -126,7 +126,10 @@ try {
         }
     };
     await send('Runtime.enable'); await send('Page.enable');
-    if (cardsOnly) {
+    if (process.argv.includes('--perfumes')) {
+        const { verifyPerfumeSearch } = await import('./perfume-search.mjs');
+        await verifyPerfumeSearch({ send, evaluate, until, navigate, root, fill, click, submit });
+    } else if (cardsOnly) {
         const { verifyCards } = await import('./card-layout.mjs');
         await verifyCards({ send, evaluate, until, navigate, root });
     } else {
@@ -153,7 +156,7 @@ try {
     await navigate('/perfumes'); await layout('Perfumes');
     await click('[data-pagination] a[rel=next]');
     await until("document.querySelector('[data-pagination]').textContent.includes('Page 2 of 2')");
-    await click('[data-category=women]');
+    await evaluate("document.querySelector('[data-category-select]').value='women';document.querySelector('[data-category-select]').dispatchEvent(new Event('change'))");
     await until("document.querySelector('[data-count]').textContent.includes('8 perfumes')");
     await click('[data-items] a'); await until("location.pathname.startsWith('/perfumes/review-') && document.readyState === 'complete'");
     await layout('Perfume detail');

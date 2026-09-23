@@ -16,15 +16,6 @@
                 </div>
             @endif
             <div class="field">
-                <label for="deviceType">Device Type *</label>
-                <select name="product_type" id="deviceType" required>
-                    <option value="">Select Device Type</option>
-                    @foreach (\App\Models\Product::deviceTypes() as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="field">
                 <label for="deviceName">Name *</label>
                 <input type="text" name="name" id="deviceName" maxlength="120" required>
             </div>

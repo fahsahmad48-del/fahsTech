@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class ReviewRegressionTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase; 
 
     private function signIn(): void
     {

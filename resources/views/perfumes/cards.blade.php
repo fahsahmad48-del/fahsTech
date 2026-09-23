@@ -8,5 +8,5 @@
         </div>
     </a>
 @empty
-    <p class="perfume-empty">No perfumes found in this category.</p>
+    <p class="perfume-empty">No perfumes match your search and category.</p>
 @endforelse

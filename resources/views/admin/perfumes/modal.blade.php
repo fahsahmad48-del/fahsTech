@@ -10,6 +10,7 @@
             <input type="hidden" name="_form" value="perfume">
             <input type="hidden" name="_record">
             <input type="hidden" name="filter_category" value="{{ $selectedCategory }}">
+            <input type="hidden" name="filter_q" value="{{ $search }}">
             <input type="hidden" name="filter_page" value="{{ $perfumes->currentPage() }}">
             <div id="perfumeMethod"></div>
             @if ($errors->any() && old('_form') === 'perfume')

@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class DeviceProductsTest extends TestCase
@@ -25,7 +26,7 @@ class DeviceProductsTest extends TestCase
     private function deviceData(Category $category, array $overrides = []): array
     {
         return array_replace([
-            'product_type' => 'laptop', 'name' => 'MacBook Air', 'brand' => 'Apple',
+            'name' => 'MacBook Air', 'brand' => 'Apple',
             'category_id' => $category->id, 'price' => '999.99', 'colors' => 'Blue, Silver, Blue',
             'description' => 'A portable computer.',
             'specs' => [
@@ -120,7 +121,55 @@ class DeviceProductsTest extends TestCase
         $this->assertSame('phone', $product->fresh()->product_type);
     }
 
-    public function test_all_device_types_use_generic_specs_image_processing_and_cache_invalidation(): void
+    public static function submittedProductTypes(): array
+    {
+        return [
+            'omitted' => [[]],
+            'phone' => [['product_type' => 'phone']],
+            'device' => [['product_type' => 'device']],
+            'legacy type' => [['product_type' => 'laptop']],
+            'unknown' => [['product_type' => 'unknown']],
+            'null' => [['product_type' => null]],
+            'array' => [['product_type' => ['phone']]],
+        ];
+    }
+
+    #[DataProvider('submittedProductTypes')]
+    public function test_creation_and_editing_ignore_browser_product_type(array $submittedType): void
+    {
+        Storage::fake('public');
+        $this->signIn();
+        $category = Category::create(['name' => 'Electronics']);
+
+        foreach (['phone' => '/admin/products', 'device' => '/admin/products/devices'] as $type => $url) {
+            $data = $this->deviceData($category, $submittedType);
+            $this->postJson($url, $data + ['image' => UploadedFile::fake()->image('product.png')])
+                ->assertCreated();
+            $product = Product::latest('id')->firstOrFail();
+            $this->assertSame($type, $product->product_type);
+
+            $this->putJson('/admin/products/'.$product->id, array_replace($data, ['name' => 'Edited '.$type]))
+                ->assertOk();
+            $this->assertSame($type, $product->fresh()->product_type);
+            $this->assertSame('Edited '.$type, $product->fresh()->name);
+        }
+    }
+
+    public function test_admin_forms_have_no_product_type_control_and_keep_edit_type_metadata(): void
+    {
+        $this->signIn();
+        $category = Category::create(['name' => 'Electronics']);
+        foreach (['phone', 'device'] as $type) {
+            $this->product($category, ['product_type' => $type]);
+        }
+
+        $this->get('/admin/products')->assertOk()
+            ->assertSee('id="productForm"', false)->assertSee('id="deviceForm"', false)
+            ->assertDontSee('name="product_type"', false)->assertDontSee('Device Type')
+            ->assertSee('data-type="phone"', false)->assertSee('data-type="device"', false);
+    }
+
+    public function test_devices_use_generic_specs_image_processing_and_cache_invalidation(): void
     {
         Storage::fake('public');
         $this->signIn();
@@ -131,7 +180,8 @@ class DeviceProductsTest extends TestCase
             $this->post('/admin/products/devices', $this->deviceData($category, ['product_type' => $type, 'name' => $label]) + [
                 'image' => UploadedFile::fake()->image('device.jpg', 1600, 800),
             ])->assertSessionHasNoErrors();
-            $product = Product::where('product_type', $type)->firstOrFail();
+            $product = Product::latest('id')->firstOrFail();
+            $this->assertSame('device', $product->product_type);
             $this->assertSame(['Processor' => 'Apple M4', 'RAM' => '16GB'], $product->specs);
             $this->assertSame(['Blue', 'Silver'], $product->colors);
             $this->assertNull($product->ram);
@@ -145,16 +195,12 @@ class DeviceProductsTest extends TestCase
         $this->assertDatabaseCount('categories', 1);
     }
 
-    public function test_devices_reject_invalid_types_partial_duplicate_and_oversized_specs(): void
+    public function test_devices_reject_partial_duplicate_and_oversized_specs_and_invalid_images_and_prices(): void
     {
         Storage::fake('public');
         $this->signIn();
         $category = Category::create(['name' => 'Devices']);
         $cases = [
-            [['product_type' => 'phone'], 'product_type'],
-            [['product_type' => 'perfume'], 'product_type'],
-            [['product_type' => 'unknown'], 'product_type'],
-            [['product_type' => null], 'product_type'],
             [['specs' => [['name' => 'RAM', 'value' => '16GB'], ['name' => ' ram ', 'value' => '8GB']]], 'specs.1.name'],
             [['specs' => [['name' => 'RAM', 'value' => '']]], 'specs.0.value'],
             [['specs' => [['name' => '', 'value' => '16GB']]], 'specs.0.name'],
@@ -186,6 +232,7 @@ class DeviceProductsTest extends TestCase
         $data = $this->deviceData($category, ['specs' => [['name' => 'Storage', 'value' => '1TB'], ['name' => 'USB Ports', 'value' => '0']]]);
         $this->put('/admin/products/'.$product->id, $data)->assertSessionHasNoErrors();
         $this->assertSame(['Storage' => '1TB', 'USB Ports' => '0'], $product->fresh()->specs);
+        $this->assertSame('device', $product->fresh()->product_type);
         Storage::disk('public')->assertExists('products/old.webp');
         Cache::put('home.products.latest', 'stale');
         Cache::put('home.categories', 'stale');
@@ -196,8 +243,8 @@ class DeviceProductsTest extends TestCase
         $this->assertFalse(Cache::has('home.categories'));
         $this->put('/admin/products/'.$product->id, $this->deviceData($category, ['specs' => []]))->assertSessionHasNoErrors();
         $this->assertSame([], $product->fresh()->specs);
-        $this->put('/admin/products/'.$product->id, $this->deviceData($category, ['product_type' => 'phone']))->assertSessionHasErrors('product_type');
-        $this->assertSame('laptop', $product->fresh()->product_type);
+        $this->put('/admin/products/'.$product->id, $this->deviceData($category, ['product_type' => 'phone']))->assertSessionHasNoErrors();
+        $this->assertSame('device', $product->fresh()->product_type);
     }
 
     public function test_failed_device_create_cleans_new_image(): void
