@@ -13,7 +13,7 @@
                             @endif
 
                             {{ $product->name }}
-                            <span class="product-type-badge">{{ $product->typeLabel() }}</span>
+                            
                         </td>
 
 

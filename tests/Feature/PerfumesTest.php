@@ -41,7 +41,10 @@ class PerfumesTest extends TestCase
 
     public function test_perfumes_have_a_separate_table_and_unique_stable_slugs(): void
     {
-        $this->assertSame(['men' => 'Men', 'women' => 'Women'], Perfume::CATEGORIES);
+        $this->assertSame([
+            'men' => 'Men', 'women' => 'Women', 'kids' => 'Kids',
+            'body-mists' => 'Body Mists', 'home-sprays' => 'Home Sprays',
+        ], Perfume::CATEGORIES);
         $this->assertTrue(Schema::hasColumns('perfumes', [
             'id', 'name', 'slug', 'category', 'price', 'specs', 'description',
             'image_path', 'image_status', 'created_at', 'updated_at',
@@ -139,7 +142,7 @@ class PerfumesTest extends TestCase
         Storage::fake('public');
         $this->signIn();
         foreach ([
-            [['category' => 'kids'], 'category'], [['category' => 'other'], 'category'],
+            [['category' => 'other'], 'category'],
             [['category' => ['men']], 'category'], [['name' => ''], 'name'],
             [['price' => '-1'], 'price'],
             [['price' => '1.001'], 'price'], [['price' => '100000000'], 'price'],
@@ -243,15 +246,75 @@ class PerfumesTest extends TestCase
             $escaped = $this->getJson($path.'/filter?category=women')->assertJsonPath('count', 2);
             $this->assertStringNotContainsString('<script>', $escaped->json('html'));
             $this->assertStringContainsString('&lt;script&gt;', $escaped->json('html'));
-            $this->getJson($path.'/filter?category=kids&page=-1')->assertUnprocessable()->assertJsonValidationErrors(['category', 'page']);
+            $this->getJson($path.'/filter?category=other&page=-1')->assertUnprocessable()->assertJsonValidationErrors(['category', 'page']);
             $this->getJson($path.'/filter?category[]=men')->assertUnprocessable();
         }
         $this->getJson('/search/products')->assertJsonPath('products.total', 0);
         Perfume::query()->delete();
         foreach (['/admin/perfumes', '/perfumes'] as $path) {
             $empty = $this->getJson($path.'/filter?category=women&page=4')->assertJsonPath('count', 0)->assertJsonPath('page', 1);
-            $this->assertStringContainsString('No perfumes found in this category.', $empty->json('html'));
+            $this->assertStringContainsString('No perfumes match your search and category.', $empty->json('html'));
         }
+    }
+
+    public function test_name_search_is_partial_case_insensitive_literal_and_combined_with_category(): void
+    {
+        $this->signIn();
+        $this->perfume(['name' => 'Sauvage']);
+        $this->perfume(['name' => 'Sauvage Rose', 'category' => 'women']);
+        $this->perfume(['name' => 'Quiet scent', 'description' => 'Sauvage']);
+        $this->perfume(['name' => '50%_! Spray', 'category' => 'home-sprays']);
+        $this->perfume(['name' => '500 Extra Spray', 'category' => 'body-mists']);
+        $this->perfume(['name' => 'Scent 0', 'category' => 'kids']);
+
+        foreach (['/perfumes', '/admin/perfumes'] as $path) {
+            $this->get($path.'?q=SAUV&category=men')->assertOk()
+                ->assertSee('value="SAUV"', false)->assertSee('Sauvage')->assertDontSee('Sauvage Rose');
+            foreach (['sauv', 'SAUV'] as $q) {
+                $this->getJson($path.'/filter?'.http_build_query(['q' => $q]))
+                    ->assertOk()->assertJsonPath('count', 2);
+            }
+            foreach (['%', '_', '!', '%_!'] as $q) {
+                $response = $this->getJson($path.'/filter?'.http_build_query(['q' => $q]))
+                    ->assertOk()->assertJsonPath('count', 1);
+                $this->assertStringContainsString('50%_! Spray', $response->json('html'));
+            }
+            $this->getJson($path.'/filter?q=spray&category=home-sprays')->assertJsonPath('count', 1);
+            $this->getJson($path.'/filter?q=spray&category=kids')->assertJsonPath('count', 0);
+            $this->getJson($path.'/filter?q=0&category=kids')->assertJsonPath('count', 1);
+            $this->getJson($path.'/filter?q=%20%20')->assertJsonPath('count', 6);
+            $this->getJson($path.'/filter?q[]=sauv')->assertUnprocessable()->assertJsonValidationErrors('q');
+            $this->getJson($path.'/filter?q='.str_repeat('x', 121))->assertUnprocessable()->assertJsonValidationErrors('q');
+            $this->get($path)->assertSeeInOrder(['All Categories', 'Men', 'Women', 'Kids', 'Body Mists', 'Home Sprays']);
+        }
+    }
+
+    public function test_search_and_category_survive_pagination_and_admin_actions(): void
+    {
+        $this->signIn();
+        for ($i = 1; $i <= 16; $i++) {
+            $this->perfume(['name' => 'Spray 0 '.$i, 'category' => 'home-sprays']);
+        }
+        $this->perfume(['name' => 'Other', 'category' => 'home-sprays']);
+        $this->perfume(['name' => 'Spray', 'category' => 'body-mists']);
+        foreach (['/perfumes', '/admin/perfumes'] as $path) {
+            $response = $this->getJson($path.'/filter?q=spray&category=home-sprays')
+                ->assertOk()->assertJsonPath('count', 16);
+            $this->assertStringContainsString('q=spray', $response->json('pagination'));
+            $this->assertStringContainsString('category=home-sprays', $response->json('pagination'));
+            $this->assertStringContainsString('page=2', $response->json('pagination'));
+            $this->getJson($path.'/filter?q=spray&category=home-sprays&page=2')
+                ->assertJsonPath('count', 16)->assertJsonPath('page', 2);
+            $this->getJson($path.'/filter?q=spray&category=home-sprays&page=99')->assertJsonPath('page', 2);
+            $route = $path === '/perfumes' ? 'perfumes.index' : 'admin.perfumes.index';
+            $this->get($path.'?q=0&category=home-sprays&page=99')->assertRedirect(route($route, [
+                'q' => '0', 'category' => 'home-sprays', 'page' => 2,
+            ]));
+        }
+        $perfume = Perfume::where('category', 'home-sprays')->first();
+        $this->delete('/admin/perfumes/'.$perfume->id, [
+            'filter_q' => '0', 'filter_category' => 'home-sprays', 'filter_page' => 2,
+        ])->assertRedirect(route('admin.perfumes.index', ['q' => '0', 'category' => 'home-sprays', 'page' => 2]));
     }
 
     public function test_public_slug_details_render_dynamic_specs_whatsapp_and_public_navigation(): void

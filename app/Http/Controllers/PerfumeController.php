@@ -17,13 +17,15 @@ class PerfumeController extends Controller
         // array_filter() leaves the category out of the link when no category was chosen.
         if ($perfumes->currentPage() > $perfumes->lastPage()) {
             return redirect()->route('perfumes.index', array_filter([
+                'q' => trim($request->input('q') ?? ''),
                 'category' => $request->input('category'), 'page' => $perfumes->lastPage(),
-            ]));
+            ], fn ($value) => $value !== null && $value !== ''));
         }
         // Remember the chosen category. An empty string means all categories.
         $selectedCategory = $request->input('category', '');
+        $search = trim($request->input('q') ?? '');
 
-        return view('perfumes.index', compact('perfumes', 'selectedCategory'));
+        return view('perfumes.index', compact('perfumes', 'selectedCategory', 'search'));
     }
 
     /** Send new perfume cards and page links without reloading the whole page. */

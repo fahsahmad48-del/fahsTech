@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Validation\Rule;
 use Throwable;
 
 class ProductController extends Controller
@@ -93,6 +92,7 @@ class ProductController extends Controller
     public function storeDevice(Request $request)
     {
         $data = $this->prepareDeviceData($request->validate($this->deviceRules(true)));
+        $data['product_type'] = 'device';
 
         return $this->createProduct($request, $data, 'Device added successfully.');
     }
@@ -127,6 +127,7 @@ class ProductController extends Controller
             $data['product_type'] = 'phone';
         } else {
             $data = $this->prepareDeviceData($request->validate($this->deviceRules(false)));
+            $data['product_type'] = 'device';
         }
 
         // Save the new image first. If that fails, the product stays as it was.
@@ -214,10 +215,9 @@ class ProductController extends Controller
             'ram', 'storage', 'screen', 'processor', 'battery', 'camera',
         ]));
 
-        // Add the device rules to the rules above. Allow only device types from our list.
+        // Add the device specification rules to the rules above.
         // The * means every details row. Each row may contain only name and value.
         return $rules + [
-            'product_type' => ['required', 'string', Rule::in(array_keys(Product::deviceTypes()))], // only allow device types from our list
             'specs' => ['nullable', 'array', 'max:30'],
             'specs.*' => ['array:name,value'],
             'specs.*.name' => ['nullable', 'string', 'max:60'],

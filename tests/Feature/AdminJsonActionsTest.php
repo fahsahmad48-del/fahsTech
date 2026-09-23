@@ -30,17 +30,19 @@ class AdminJsonActionsTest extends TestCase
         Storage::fake('public');
         $this->signIn();
         $category = Category::create(['name' => 'Electronics']);
-        foreach (['phone' => '/admin/products', 'laptop' => '/admin/products/devices'] as $type => $url) {
+        foreach (['phone' => '/admin/products', 'device' => '/admin/products/devices'] as $type => $url) {
             $data = ['name' => 'New '.$type, 'brand' => 'Brand', 'category_id' => $category->id,
-                'price' => '99.50', 'product_type' => $type];
+                'price' => '99.50'];
             $this->withHeader('Accept', 'application/json')->post($url, $data + [
                 'image' => UploadedFile::fake()->image('item.png'),
                 'filter_page' => 1, 'filter_category' => $category->id,
             ])->assertCreated()->assertJsonStructure(['message'])->assertHeaderMissing('Location');
             $product = Product::latest('id')->firstOrFail();
+            $this->assertSame($type, $product->product_type);
             $this->post('/admin/products/'.$product->id, array_replace($data, [
                 '_method' => 'PUT', 'name' => 'Updated '.$type,
             ]))->assertOk()->assertJsonStructure(['message']);
+            $this->assertSame($type, $product->fresh()->product_type);
             $list = $this->getJson('/admin/products/filter?category='.$category->id)->assertOk()->assertJsonPath('count', 1);
             $this->assertStringContainsString('Updated '.$type, $list->json('html'));
             $this->assertStringContainsString('edit-product', $list->json('html'));
@@ -120,7 +122,8 @@ class AdminJsonActionsTest extends TestCase
     {
         $this->signIn();
         $this->postJson('/admin/products', [])->assertUnprocessable()->assertJsonValidationErrors(['name', 'image']);
-        $this->postJson('/admin/products/devices', [])->assertUnprocessable()->assertJsonValidationErrors(['product_type', 'image']);
+        $this->postJson('/admin/products/devices', [])->assertUnprocessable()
+            ->assertJsonValidationErrors(['image'])->assertJsonMissingValidationErrors('product_type');
         $perfume = Perfume::create(['name' => 'Scent', 'category' => 'women', 'price' => 1, 'image_path' => 'perfumes/test.webp']);
         $this->putJson('/admin/perfumes/'.$perfume->id, [
             'name' => 'Scent', 'category' => 'women', 'price' => 1,

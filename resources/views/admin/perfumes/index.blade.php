@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', 'Perfumes') 
+@section('title', 'Perfumes')
 @section('admin-content')
     <div id="adminMessage" class="note" role="status" aria-live="polite" hidden></div>
     <div id="perfumeCatalog" data-filter-url="{{ route('admin.perfumes.filter') }}"
@@ -8,15 +8,22 @@
             <h2>Perfumes</h2>
             <button type="button" class="btn btn-primary" id="addPerfume">+ Add Perfume</button>
         </div>
-        <div class="field admin-category-filter">
-            <label for="perfumeCategoryFilter">Category:</label>
-            <select id="perfumeCategoryFilter" data-category-select>
-                <option value="">All Categories</option>
-                @foreach (\App\Models\Perfume::CATEGORIES as $value => $label)
-                    <option value="{{ $value }}" @selected($selectedCategory === $value)>{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
+        <form class="admin-perfume-filters" data-search-form action="{{ route('admin.perfumes.index') }}" method="GET" role="search" aria-label="Search perfumes">
+            <div class="field">
+                <label for="perfumeSearch">Perfume name:</label>
+                <input id="perfumeSearch" data-search-input type="search" name="q" value="{{ $search }}" maxlength="120" placeholder="Search by name..." autocomplete="off">
+            </div>
+            <div class="field admin-category-filter">
+                <label for="perfumeCategoryFilter">Category:</label>
+                <select id="perfumeCategoryFilter" name="category" data-category-select>
+                    <option value="">All Categories</option>
+                    @foreach (\App\Models\Perfume::CATEGORIES as $value => $label)
+                        <option value="{{ $value }}" @selected($selectedCategory === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <noscript><button class="btn btn-primary" type="submit">Search</button></noscript>
+        </form>
         @include('perfumes.feedback')
         <div data-results aria-busy="false">
             <div class="table-wrap">

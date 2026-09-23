@@ -24,17 +24,19 @@ class PerfumeController extends Controller
         // array_filter() leaves the category out of the link when no category was chosen.
         if ($perfumes->currentPage() > $perfumes->lastPage()) {
             return redirect()->route('admin.perfumes.index', array_filter([
+                'q' => trim($request->input('q') ?? ''),
                 'category' => $request->input('category'), 'page' => $perfumes->lastPage(),
-            ]));
+            ], fn ($value) => $value !== null && $value !== ''));
         }
         $selectedCategory = $request->input('category', '');
+        $search = trim($request->input('q') ?? '');
         // old() gets the perfume ID from the form that had an error.
         // Check that it contains only digits before finding that perfume and its image.
         $record = old('_record');
         $editingPerfume = is_scalar($record) && ctype_digit((string) $record)
             ? Perfume::find($record) : null;
 
-        return view('admin.perfumes.index', compact('perfumes', 'selectedCategory', 'editingPerfume'));
+        return view('admin.perfumes.index', compact('perfumes', 'selectedCategory', 'search', 'editingPerfume'));
     }
 
     /** Send new table rows and page links without reloading the whole page. */
@@ -46,11 +48,12 @@ class PerfumeController extends Controller
             $perfumes = $catalog->paginate($request, 'admin.perfumes.index', $perfumes->lastPage());
         }
         $selectedCategory = $request->input('category', '');
+        $search = trim($request->input('q') ?? '');
 
         // Turn the views into HTML that JavaScript can put on the page.
         // total() counts all matching perfumes, including those on other pages.
         return response()->json([
-            'html' => view('admin.perfumes.rows', compact('perfumes', 'selectedCategory'))->render(),
+            'html' => view('admin.perfumes.rows', compact('perfumes', 'selectedCategory', 'search'))->render(),
             'pagination' => $perfumes->links('components.pagination', ['label' => 'Perfume pages'])->toHtml(),
             'count' => $perfumes->total(), 'page' => $perfumes->currentPage(),
         ]);
@@ -132,7 +135,7 @@ class PerfumeController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            // Allow only the categories listed in Perfume::CATEGORIES: men and women.
+            // Allow only the fixed perfume categories.
             'category' => ['required', 'string', Rule::in(array_keys(Perfume::CATEGORIES))],
             // Allow prices such as 25 or 25.50, but not 25.555.
             'price' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:99999999.99'],
@@ -189,13 +192,15 @@ class PerfumeController extends Controller
         // The form remembers the category and page the admin was viewing.
         // Check that the page number is allowed before using it.
         $category = $request->input('filter_category');
+        $search = $request->input('filter_q');
         $page = filter_var($request->input('filter_page'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 100000]]);
 
         // Use page 1 if the page number is invalid. Leave out unknown categories.
         // with('success', ...) saves the message to show on the next page.
         return redirect()->route('admin.perfumes.index', array_filter([
+            'q' => is_string($search) ? mb_substr(trim($search), 0, 120) : null,
             'category' => is_string($category) && isset(Perfume::CATEGORIES[$category]) ? $category : null,
             'page' => $page ?: 1,
-        ]))->with('success', $message);
+        ], fn ($value) => $value !== null && $value !== ''))->with('success', $message);
     }
 }

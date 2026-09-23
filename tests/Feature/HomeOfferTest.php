@@ -15,7 +15,7 @@ class HomeOfferTest extends TestCase
 
     private function signIn(): void
     {
-        Admin::create(['password' => 'original-password']);
+        Admin::create(['password' => 'original-password']); 
         $this->post('/admin/login', ['password' => 'original-password'])->assertRedirect();
     }
 

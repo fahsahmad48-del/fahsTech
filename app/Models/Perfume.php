@@ -7,7 +7,10 @@ use Illuminate\Support\Str;
 
 class Perfume extends Model
 {
-    public const CATEGORIES = ['men' => 'Men', 'women' => 'Women'];
+    public const CATEGORIES = [
+        'men' => 'Men', 'women' => 'Women', 'kids' => 'Kids',
+        'body-mists' => 'Body Mists', 'home-sprays' => 'Home Sprays',
+    ];
 
     protected $fillable = [
         'name', 'slug', 'category', 'price', 'specs',
