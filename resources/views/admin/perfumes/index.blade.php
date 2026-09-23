@@ -8,11 +8,7 @@
             <h2>Perfumes</h2>
             <button type="button" class="btn btn-primary" id="addPerfume">+ Add Perfume</button>
         </div>
-        <form class="admin-perfume-filters" data-search-form action="{{ route('admin.perfumes.index') }}" method="GET" role="search" aria-label="Search perfumes">
-            <div class="field">
-                <label for="perfumeSearch">Perfume name:</label>
-                <input id="perfumeSearch" data-search-input type="search" name="q" value="{{ $search }}" maxlength="120" placeholder="Search by name..." autocomplete="off">
-            </div>
+        <form class="admin-perfume-filters" data-filter-form action="{{ route('admin.perfumes.index') }}" method="GET" aria-label="Filter perfumes by category">
             <div class="field admin-category-filter">
                 <label for="perfumeCategoryFilter">Category:</label>
                 <select id="perfumeCategoryFilter" name="category" data-category-select>
@@ -22,7 +18,7 @@
                     @endforeach
                 </select>
             </div>
-            <noscript><button class="btn btn-primary" type="submit">Search</button></noscript>
+            <noscript><button class="btn btn-primary" type="submit">Filter</button></noscript>
         </form>
         @include('perfumes.feedback')
         <div data-results aria-busy="false">
@@ -40,5 +36,5 @@
 
 @push('scripts')
     <script src="{{ asset('js/admin/common.js') }}" defer></script>
-    <script src="{{ asset('js/admin/perfumes.js') }}" defer></script>
+    <script src="{{ asset('js/admin/perfumes.js') }}?v={{ filemtime(public_path('js/admin/perfumes.js')) }}" defer></script>
 @endpush

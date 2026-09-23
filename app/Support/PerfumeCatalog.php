@@ -9,10 +9,10 @@ use Illuminate\Validation\Rule;
 
 class PerfumeCatalog
 {
-    public function paginate(Request $request, string $route, ?int $page = null): LengthAwarePaginator
+    public function paginate(Request $request, string $route, ?int $page = null, bool $searchable = true): LengthAwarePaginator
     {
         $data = $request->validate([
-            'q' => ['nullable', 'string', 'max:120'],
+            ...($searchable ? ['q' => ['nullable', 'string', 'max:120']] : []),
             'category' => ['nullable', 'string', Rule::in(array_keys(Perfume::CATEGORIES))],
             'page' => ['nullable', 'integer', 'min:1', 'max:100000'],
         ]);

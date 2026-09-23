@@ -19,7 +19,6 @@
                     @csrf
                     @method('DELETE')
                     <input type="hidden" name="filter_category" value="{{ $selectedCategory }}">
-                    <input type="hidden" name="filter_q" value="{{ $search }}">
                     <input type="hidden" name="filter_page" value="{{ $perfumes->currentPage() }}">
                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                 </form>
@@ -27,5 +26,5 @@
         </td>
     </tr>
 @empty
-    <tr><td colspan="4" class="admin-products-empty">No perfumes match your search and category.</td></tr>
+    <tr><td colspan="4" class="admin-products-empty">No perfumes match this category.</td></tr>
 @endforelse

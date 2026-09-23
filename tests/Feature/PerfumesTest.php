@@ -253,7 +253,8 @@ class PerfumesTest extends TestCase
         Perfume::query()->delete();
         foreach (['/admin/perfumes', '/perfumes'] as $path) {
             $empty = $this->getJson($path.'/filter?category=women&page=4')->assertJsonPath('count', 0)->assertJsonPath('page', 1);
-            $this->assertStringContainsString('No perfumes match your search and category.', $empty->json('html'));
+            $this->assertStringContainsString($path === '/perfumes'
+                ? 'No perfumes match your search and category.' : 'No perfumes match this category.', $empty->json('html'));
         }
     }
 
@@ -267,7 +268,7 @@ class PerfumesTest extends TestCase
         $this->perfume(['name' => '500 Extra Spray', 'category' => 'body-mists']);
         $this->perfume(['name' => 'Scent 0', 'category' => 'kids']);
 
-        foreach (['/perfumes', '/admin/perfumes'] as $path) {
+        foreach (['/perfumes'] as $path) {
             $this->get($path.'?q=SAUV&category=men')->assertOk()
                 ->assertSee('value="SAUV"', false)->assertSee('Sauvage')->assertDontSee('Sauvage Rose');
             foreach (['sauv', 'SAUV'] as $q) {
@@ -297,7 +298,7 @@ class PerfumesTest extends TestCase
         }
         $this->perfume(['name' => 'Other', 'category' => 'home-sprays']);
         $this->perfume(['name' => 'Spray', 'category' => 'body-mists']);
-        foreach (['/perfumes', '/admin/perfumes'] as $path) {
+        foreach (['/perfumes'] as $path) {
             $response = $this->getJson($path.'/filter?q=spray&category=home-sprays')
                 ->assertOk()->assertJsonPath('count', 16);
             $this->assertStringContainsString('q=spray', $response->json('pagination'));
@@ -314,7 +315,35 @@ class PerfumesTest extends TestCase
         $perfume = Perfume::where('category', 'home-sprays')->first();
         $this->delete('/admin/perfumes/'.$perfume->id, [
             'filter_q' => '0', 'filter_category' => 'home-sprays', 'filter_page' => 2,
-        ])->assertRedirect(route('admin.perfumes.index', ['q' => '0', 'category' => 'home-sprays', 'page' => 2]));
+        ])->assertRedirect(route('admin.perfumes.index', ['category' => 'home-sprays', 'page' => 2]));
+    }
+
+    public function test_admin_filters_only_by_category_and_ignores_name_queries(): void
+    {
+        $this->signIn();
+        for ($i = 1; $i <= 16; $i++) {
+            $this->perfume(['name' => 'Women scent '.$i, 'category' => 'women']);
+        }
+        $this->perfume(['name' => 'Men scent', 'category' => 'men']);
+        $this->get('/admin/perfumes?q[]=ignored&category=women')->assertOk()
+            ->assertDontSee('data-search-input', false)->assertDontSee('name="q"', false)
+            ->assertDontSee('name="filter_q"', false)
+            ->assertSeeInOrder(['All Categories', 'Men', 'Women', 'Kids', 'Body Mists', 'Home Sprays']);
+        foreach (['not found', ['ignored'], str_repeat('x', 121)] as $query) {
+            $response = $this->getJson('/admin/perfumes/filter?'.http_build_query(['q' => $query, 'category' => 'women']))
+                ->assertOk()->assertJsonPath('count', 16);
+            $this->assertStringContainsString('category=women', $response->json('pagination'));
+            $this->assertStringNotContainsString('q=', $response->json('pagination'));
+            $this->assertStringNotContainsString('filter_q', $response->json('html'));
+        }
+        $this->getJson('/admin/perfumes/filter?category=women&page=2&q=ignored')
+            ->assertOk()->assertJsonPath('count', 16)->assertJsonPath('page', 2);
+        $this->get('/admin/perfumes?category=women&page=99&q[]=ignored')
+            ->assertRedirect(route('admin.perfumes.index', ['category' => 'women', 'page' => 2]));
+        foreach (Perfume::CATEGORIES as $category => $label) {
+            $this->getJson('/admin/perfumes/filter?category='.$category)->assertOk()
+                ->assertJsonPath('count', match ($category) { 'women' => 16, 'men' => 1, default => 0 });
+        }
     }
 
     public function test_public_slug_details_render_dynamic_specs_whatsapp_and_public_navigation(): void

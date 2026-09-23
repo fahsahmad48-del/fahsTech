@@ -19,41 +19,38 @@ class PerfumeController extends Controller
     public function index(Request $request, PerfumeCatalog $catalog)
     {
         // Use the catalog helper to check the filters and get one page of perfumes.
-        $perfumes = $catalog->paginate($request, 'admin.perfumes.index');
+        $perfumes = $catalog->paginate($request, 'admin.perfumes.index', searchable: false);
         // Example: if page 4 no longer exists, go to the last page that does.
         // array_filter() leaves the category out of the link when no category was chosen.
         if ($perfumes->currentPage() > $perfumes->lastPage()) {
             return redirect()->route('admin.perfumes.index', array_filter([
-                'q' => trim($request->input('q') ?? ''),
                 'category' => $request->input('category'), 'page' => $perfumes->lastPage(),
             ], fn ($value) => $value !== null && $value !== ''));
         }
         $selectedCategory = $request->input('category', '');
-        $search = trim($request->input('q') ?? '');
         // old() gets the perfume ID from the form that had an error.
         // Check that it contains only digits before finding that perfume and its image.
         $record = old('_record');
         $editingPerfume = is_scalar($record) && ctype_digit((string) $record)
             ? Perfume::find($record) : null;
 
-        return view('admin.perfumes.index', compact('perfumes', 'selectedCategory', 'search', 'editingPerfume'));
+        return view('admin.perfumes.index', compact('perfumes', 'selectedCategory', 'editingPerfume'));
     }
 
     /** Send new table rows and page links without reloading the whole page. */
     public function filter(Request $request, PerfumeCatalog $catalog)
     {
-        $perfumes = $catalog->paginate($request, 'admin.perfumes.index');
+        $perfumes = $catalog->paginate($request, 'admin.perfumes.index', searchable: false);
         // If the chosen page no longer exists, get the last page instead.
         if ($perfumes->currentPage() > $perfumes->lastPage()) {
-            $perfumes = $catalog->paginate($request, 'admin.perfumes.index', $perfumes->lastPage());
+            $perfumes = $catalog->paginate($request, 'admin.perfumes.index', $perfumes->lastPage(), searchable: false);
         }
         $selectedCategory = $request->input('category', '');
-        $search = trim($request->input('q') ?? '');
 
         // Turn the views into HTML that JavaScript can put on the page.
         // total() counts all matching perfumes, including those on other pages.
         return response()->json([
-            'html' => view('admin.perfumes.rows', compact('perfumes', 'selectedCategory', 'search'))->render(),
+            'html' => view('admin.perfumes.rows', compact('perfumes', 'selectedCategory'))->render(),
             'pagination' => $perfumes->links('components.pagination', ['label' => 'Perfume pages'])->toHtml(),
             'count' => $perfumes->total(), 'page' => $perfumes->currentPage(),
         ]);
@@ -192,13 +189,11 @@ class PerfumeController extends Controller
         // The form remembers the category and page the admin was viewing.
         // Check that the page number is allowed before using it.
         $category = $request->input('filter_category');
-        $search = $request->input('filter_q');
         $page = filter_var($request->input('filter_page'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 100000]]);
 
         // Use page 1 if the page number is invalid. Leave out unknown categories.
         // with('success', ...) saves the message to show on the next page.
         return redirect()->route('admin.perfumes.index', array_filter([
-            'q' => is_string($search) ? mb_substr(trim($search), 0, 120) : null,
             'category' => is_string($category) && isset(Perfume::CATEGORIES[$category]) ? $category : null,
             'page' => $page ?: 1,
         ], fn ($value) => $value !== null && $value !== ''))->with('success', $message);

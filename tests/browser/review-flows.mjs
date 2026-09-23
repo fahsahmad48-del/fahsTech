@@ -77,7 +77,11 @@ try {
     const errors = [];
     socket.onmessage = ({ data }) => {
         const message = JSON.parse(data);
-        if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text);
+        if (message.method === 'Runtime.exceptionThrown') {
+            const error = message.params.exceptionDetails.exception?.description || message.params.exceptionDetails.text;
+            errors.push(error);
+            console.error(error);
+        }
         if (pending.has(message.id)) {
             const { resolve, reject, timer } = pending.get(message.id);
             clearTimeout(timer); pending.delete(message.id);
@@ -126,7 +130,10 @@ try {
         }
     };
     await send('Runtime.enable'); await send('Page.enable');
-    if (process.argv.includes('--perfumes')) {
+    if (process.argv.includes('--products')) {
+        const { verifyProductDialogs } = await import('./product-dialogs.mjs');
+        await verifyProductDialogs({ evaluate, until, navigate, fill, click, submit, upload });
+    } else if (process.argv.includes('--perfumes')) {
         const { verifyPerfumeSearch } = await import('./perfume-search.mjs');
         await verifyPerfumeSearch({ send, evaluate, until, navigate, root, fill, click, submit });
     } else if (cardsOnly) {
@@ -193,7 +200,7 @@ try {
     console.log('Passed: admin protection, wrong/correct login, real CSRF rejection, phone create/edit/delete and stored WebP cleanup');
 
     await click('#addDeviceBtn'); await layout('Device modal');
-    await fill('#deviceType', 'laptop'); await fill('#deviceName', 'Browser laptop');
+    await fill('#deviceName', 'Browser laptop');
     await fill('#deviceBrand', 'Browser'); await fill('#devicePrice', '200');
     await evaluate("document.getElementById('deviceCategory').value='1'; document.getElementById('deviceCategory').dispatchEvent(new Event('change',{bubbles:true}))");
     await fill('#deviceSpecRows [data-spec-input=name]', 'Processor');

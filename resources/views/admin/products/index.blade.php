@@ -335,5 +335,5 @@
 
 @push('scripts')
     <script src="{{ asset('js/admin/common.js') }}" defer></script>
-    <script src="{{ asset('js/admin/products.js') }}" defer></script>
+    <script src="{{ asset('js/admin/products.js') }}?v={{ filemtime(public_path('js/admin/products.js')) }}" defer></script>
 @endpush

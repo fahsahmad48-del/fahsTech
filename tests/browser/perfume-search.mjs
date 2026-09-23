@@ -6,13 +6,7 @@ import { join } from 'node:path';
 export async function verifyPerfumeSearch({ send, evaluate, until, navigate, root, fill, click, submit }) {
     const output = join(root, 'storage/app/review-screenshots');
     await mkdir(output, { recursive: true });
-    for (const path of ['/perfumes', '/admin/perfumes']) {
-        if (path.startsWith('/admin')) {
-            await navigate('/admin/login');
-            await fill('#password', 'review-password');
-            await submit('.admin-login form');
-            await until("location.pathname === '/admin/products' && document.readyState === 'complete'");
-        }
+    for (const path of ['/perfumes']) {
         await navigate(path);
         await evaluate(`window.pageMarker = 'same document'; window.requests = [];
             window.realFetch = window.fetch;
@@ -76,19 +70,11 @@ export async function verifyPerfumeSearch({ send, evaluate, until, navigate, roo
             else assert.equal(stats.select.y, stats.input.y, 'Desktop controls align');
             if (width === 1280 || width === 390) {
                 const shot = await send('Page.captureScreenshot', {format:'png'});
-                await writeFile(join(output, `perfume-${path.startsWith('/admin') ? 'admin' : 'public'}-${width}.png`), Buffer.from(shot.data, 'base64'));
+                await writeFile(join(output, `perfume-public-${width}.png`), Buffer.from(shot.data, 'base64'));
             }
-        }
-        if (path.startsWith('/admin')) {
-            await fill('[data-search-input]', 'Review perfume 17');
-            await until("document.querySelector('[data-count]').textContent === '1 perfume found'");
-            await click('.edit-perfume');
-            assert.equal(await evaluate("document.querySelector('#perfumeForm [name=filter_q]').value"), 'Review perfume 17');
-            await fill('#perfumeName', 'Renamed scent');
-            await submit('#perfumeForm');
-            await until("!window.MiniStoreAdmin.actionPending && !document.getElementById('perfumeModal').open && document.querySelector('[data-count]').textContent === '0 perfumes found'");
-            assert.ok(await evaluate("location.search.includes('q=Review+perfume+17')"));
         }
         console.log(`Passed: ${path} debounce, combined filters, pagination, history, stale responses, retry, no refresh and four viewport widths`);
     }
+    const { verifyAdminPerfumeFilters } = await import('./admin-perfume-filters.mjs');
+    await verifyAdminPerfumeFilters({ send, evaluate, until, navigate, fill, click, submit });
 }
