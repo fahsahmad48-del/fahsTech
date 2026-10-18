@@ -1,6 +1,6 @@
-miniStore
+fahstech
 
-miniStore is a responsive product catalog built with Laravel, MySQL, and JavaScript. Visitors can browse products, search by name or brand, filter by category, and contact the store for more information. A dedicated admin dashboard lets the store owner manage products, categories, and website settings.
+fahstech is a responsive product catalog built with Laravel, MySQL, and JavaScript. Visitors can browse products, search by name or brand, filter by category, and contact the store for more information. A dedicated admin dashboard lets the store owner manage products, categories, and website settings.
 
 Features
 
