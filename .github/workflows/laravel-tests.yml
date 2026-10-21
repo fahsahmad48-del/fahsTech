@@ -1,0 +1,43 @@
+
+name: Fahs Tech CI
+
+# Run the workflow when code is pushed or a pull request is opened.
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    name: Run Laravel Tests
+    runs-on: ubuntu-latest # means the job will run on a virtual machine with Ubuntu installed., not windows because Laravel is a PHP framework that is commonly run on Linux servers.
+
+    steps:
+      # Download the repository code onto GitHub's computer.
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      # Install PHP and the extensions Laravel needs.
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql, gd, sqlite3, pdo_sqlite
+          coverage: none
+
+      # Install the exact PHP dependencies recorded in composer.lock.
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      # Create the environment configuration needed for testing.
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Execute the Laravel automated tests.
+      - name: Run tests
+        run: php artisan test
+
+
+
+# if that already insatlled so why i install it again? because the workflow runs on a fresh virtual machine each time, so we need to install dependencies every time.
