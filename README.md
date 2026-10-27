@@ -1,117 +1,114 @@
-fahstech
+# Fahs Tech
 
-fahstech is a responsive product catalog built with Laravel, MySQL, and JavaScript. Visitors can browse products, search by name or brand, filter by category, and contact the store for more information. A dedicated admin dashboard lets the store owner manage products, categories, and website settings.
+Fahs Tech is an online store I built for a real client. The project gave me experience developing a Laravel application, managing store data, and working with client requirements throughout development.
 
-Features
+**Live website:** https://fahstech.up.railway.app
 
-Storefront
+## Features
 
-Home page with featured sections, product categories, and the latest products.
+- **Product management:** Add, edit, and delete phones and other devices.
+- **Perfume catalogue:** Manage perfumes, their details, specifications, and images.
+- **Categories:** Organize products and filter them by category.
+- **Search:** Find products by name or brand and perfumes by name.
+- **Admin dashboard:** Manage store content and settings.
+- **AJAX interactions:** Update search results and perform admin actions without refreshing the entire page.
+- **Image handling:** Validate, process, and manage uploaded product images.
+- **Validation and security:** Validate incoming data and protect admin functionality.
+- **Caching:** Cache frequently accessed data to reduce repeated database queries.
+- **Responsive design:** Support mobile, tablet, and desktop screens.
 
-Product search with category filters and pagination.
+## Technologies Used
 
-Dynamic search results using JavaScript Fetch and JSON responses.
+- PHP
+- Laravel
+- MySQL
+- Blade
+- JavaScript
+- HTML and CSS
+- AJAX and JSON
+- Git and GitHub
+- Railway
 
-Loading indicators while search results are being fetched.
+## Run Locally
 
-Individual product pages with images, prices, descriptions, and specifications.
+Make sure PHP, Composer, and MySQL are installed.
 
-Phone and WhatsApp contact links.
+1. Clone the repository:
 
-Responsive layouts for desktop, tablet, and mobile screens.
+   ```bash
+   git clone https://github.com/fahsahmad48-del/fahsTech.git
+   ```
 
-Scroll reveal animations.
+2. Enter the project directory:
 
-Admin dashboard
+   ```bash
+   cd fahsTech
+   ```
 
-Admin login and logout.
+3. Install the PHP dependencies:
 
-Add, edit, and delete products.
+   ```bash
+   composer install
+   ```
 
-Manage product images, prices, categories, and specifications.
+4. Create your environment file:
 
-Create and manage categories with product counts.
+   ```bash
+   cp .env.example .env
+   ```
 
-Prevent deletion of categories that still contain products.
+   On Windows PowerShell, you can use:
 
-Update store information and website content.
+   ```powershell
+   Copy-Item .env.example .env
+   ```
 
-Form validation and feedback for administrative actions.
+5. Generate the application key:
 
-Technology Stack
+   ```bash
+   php artisan key:generate
+   ```
 
-Area
+6. Configure your database credentials in `.env`, then run the migrations:
 
-Technology
+   ```bash
+   php artisan migrate
+   ```
 
-Backend
+7. Create the public storage link:
 
-PHP and Laravel
+   ```bash
+   php artisan storage:link
+   ```
 
-Database
+8. Start the development server:
 
-MySQL / MariaDB
+   ```bash
+   php artisan serve
+   ```
 
-Templates
+   Open the local URL displayed in your terminal.
 
-Laravel Blade and reusable components
+You may also need to configure an admin account according to the project's authentication setup.
 
-Frontend
+## Testing
 
-HTML, CSS, and JavaScript
+Run the automated tests with:
 
-Dynamic requests
+```bash
+php artisan test
+```
 
-Fetch API and JSON responses
+## Deployment
 
-Data access
+The application is deployed on Railway.
 
-Eloquent ORM
+Live website: https://fahstech.up.railway.app
 
-Caching
+## What I Learned
 
-Laravel Cache
+Working on Fahs Tech helped me understand that building software for a real client involves more than implementing features. Requirements need to be clarified throughout development, progress needs to be shared, and feedback needs to be considered before making important decisions.
 
-Dependency management
+It also gave me practical experience with Laravel, database management, testing, Git workflows, and maintaining a deployed application.
 
-Composer
 
-How It Works
-
-Laravel handles routing, validation, database queries, and admin operations. Blade templates render the pages, while JavaScript updates search results without reloading the whole page.
-
-Products belong to categories and use readable slugs for their detail-page URLs. Store settings, categories, and latest-product data are cached to reduce repeated database queries. Search results are filtered and paginated on the server.
-
-Project Organization
-
-app/Models/ — Product, category, and setting models.
-
-app/Http/Controllers/ — Storefront, search, and admin logic.
-
-resources/views/ — Storefront pages and admin views.
-
-resources/views/components/ — Shared layout, navbar, and footer components.
-
-public/css/style.css — Website styling.
-
-routes/web.php — Web routes and JSON endpoints.
-
-database/migrations/ — Database schema definitions.
-
-Page-specific JavaScript is included in the relevant Blade views.
-
-Running Locally
-
-The project requires PHP, Composer, and MySQL or MariaDB. Check composer.json for the exact PHP and extension requirements.
-
-The local setup includes installing Composer dependencies, creating an .env file from .env.example, configuring the database, generating an application key, and running the database migrations. Publicly stored product images also require Laravel's storage link.
-
-Use the repository's actual seeders or account-creation process to provision an admin account. If the checked-out version uses queued jobs or a frontend build, start its queue worker or build its assets as required by that version.
-
-Author
-
-Ahmad Fahs
-
-GitHub
-
-LinkedInder the [MIT license](https://opensource.org/licenses/MIT).
